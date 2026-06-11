@@ -364,12 +364,12 @@ function extensionUpdateInfo(request) {
     changelog_url: githubReleaseUrl("tag/" + GITHUB_RELEASE_TAG),
     release_title: "DMS Assistant " + EXTENSION_LATEST_VERSION,
     release_notes: [
-      "Phát hành gói cập nhật qua GitHub Release để người dùng tải trực tiếp.",
-      "Hiển thị thông báo khi có bản cập nhật mới.",
-      "Bổ sung ticket hỗ trợ nổi bật và cập nhật trạng thái nhanh hơn.",
-      "Cải thiện gửi báo cáo lỗi kèm file kết quả."
+      "Nâng cấp dashboard chạy automation ở góc trái: rộng hơn, dễ theo dõi hơn.",
+      "Bổ sung thanh tiến độ, số dòng đã xử lý và chỉ số Thành công/Lỗi/Còn lại.",
+      "Hiển thị hồ sơ đang xử lý và lỗi gần nhất ngay trong panel chạy.",
+      "Giữ nguyên các nút Tạm dừng/Tiếp tục/Dừng hẳn/Gửi báo cáo lỗi."
     ],
-    updated_at: "2026-06-10T00:00:00.000Z"
+    updated_at: "2026-06-11T00:00:00.000Z"
   };
 }
 
