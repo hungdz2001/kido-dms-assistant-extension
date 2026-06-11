@@ -4,7 +4,7 @@
   var WORKER_ORIGIN = "";
   var SEND_PATH = "";
   var FEEDBACK_WORKER_URL = "https://kdc-employee-support.chillwithdms.workers.dev/feedback";
-  var EXTENSION_VERSION = "1.2.0";
+  var EXTENSION_VERSION = "1.2.1";
   var STORAGE_KEY = "lmb_last_sent_signature_v1";
   var EMPLOYEE_BATCH_KEY = "lmb_employee_batch_v1";
   var EMPLOYEE_QUEUE_HASH_KEY = "lmb_employee_queue";
@@ -13,6 +13,7 @@
   var LAST_SUPPORT_TICKET_KEY = "lmb_last_support_ticket_v1";
   var LAST_RESULT_ATTACHMENT_KEY = "lmb_latest_result_attachment_v1";
   var UPDATE_NOTICE_SNOOZE_KEY = "lmb_update_notice_snooze_v1";
+  var UPDATE_REQUIRED_TEST_KEY = "lmb_force_update_required_test_v1";
   var UPDATE_NOTICE_SNOOZE_MS = 12 * 60 * 60 * 1000;
   var CONTROL_PANEL_ACTIVE_TAB_KEY = "lmb_active_control_tab_v1";
   var SUPPORT_TICKET_ACTIVE_POLL_MS = 5000;
@@ -1578,6 +1579,28 @@
     return isExtensionUpdateRequired(info, currentVersion || EXTENSION_VERSION);
   }
 
+  function bumpPatchVersion(version) {
+    var parts = String(version || EXTENSION_VERSION).split(".").map(function(part) {
+      var n = parseInt(part, 10);
+      return Number.isFinite(n) && n >= 0 ? n : 0;
+    });
+    while (parts.length < 3) parts.push(0);
+    parts[2] += 1;
+    return parts.slice(0, 3).join(".");
+  }
+
+  function buildRequiredUpdateTestInfo(info, currentVersion) {
+    var forcedVersion = bumpPatchVersion(currentVersion || EXTENSION_VERSION);
+    var base = info && typeof info === "object" ? info : {};
+    return Object.assign({}, base, {
+      latest_version: forcedVersion,
+      min_supported_version: forcedVersion,
+      release_title: "DMS Assistant " + forcedVersion + " - kiểm thử",
+      release_notes: ["Chế độ kiểm thử bắt buộc cập nhật trên máy hiện tại."].concat(Array.isArray(base.release_notes) ? base.release_notes : []),
+      __local_required_update_test: true
+    });
+  }
+
   function installedExtensionVersion() {
     var chromeApi = getExtensionChromeApi();
     try {
@@ -1607,6 +1630,18 @@
         until: Date.now() + UPDATE_NOTICE_SNOOZE_MS
       }));
     } catch (e) {}
+  }
+
+  function isRequiredUpdateTestModeEnabled() {
+    try {
+      return localStorage.getItem(UPDATE_REQUIRED_TEST_KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function applyRequiredUpdateTestMode(info) {
+    return isRequiredUpdateTestModeEnabled() ? buildRequiredUpdateTestInfo(info, installedExtensionVersion()) : info;
   }
 
   function syncRequiredExtensionUpdateLock(locked) {
@@ -1683,6 +1718,7 @@
     var json = null;
     try { json = await res.json(); } catch (e) {}
     if (!res.ok || !json || json.ok !== true) return null;
+    json = applyRequiredUpdateTestMode(json);
     renderExtensionUpdateBanner(json);
     return json;
   }
@@ -4507,6 +4543,7 @@
     shouldShowExtensionUpdate: shouldShowExtensionUpdate,
     isExtensionUpdateRequired: isExtensionUpdateRequired,
     isExtensionAutomationLocked: isExtensionAutomationLocked,
+    buildRequiredUpdateTestInfo: buildRequiredUpdateTestInfo,
     normalizeControlPanelTab: normalizeControlPanelTab,
     isToolbarVisibleSetting: isToolbarVisibleSetting,
     isToolbarHostName: isToolbarHostName,

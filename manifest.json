@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AUTO TẠO TÀI KHOẢN NHÂN VIÊN - HƯNG ĐẸP TRAI",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Tự động import danh sách nhân sự và tạo tài khoản nhân viên trên DMS. Author: HƯNG ĐẸP TRAI.",
   "permissions": [
     "storage",
