@@ -1,6 +1,6 @@
 "use strict";
 
-var WORKER_VERSION = "1.2.2";
+var WORKER_VERSION = "1.2.1";
 var MAX_MESSAGE_LENGTH = 5000;
 var MAX_FIELD_LENGTH = 1000;
 var MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
@@ -8,15 +8,12 @@ var MAX_PAYLOAD_LENGTH = 5 * 1024 * 1024;
 var TICKET_TTL_SECONDS = 14 * 24 * 60 * 60;
 var RATE_WINDOW_MS = 60 * 1000;
 var RATE_LIMIT = 8;
-var EXTENSION_LATEST_VERSION = "1.2.2";
-var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.2";
+var EXTENSION_LATEST_VERSION = "1.2.1";
+var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.1";
 var EXTENSION_DOWNLOAD_PATH = "/extension-download";
 var GITHUB_RELEASE_REPO = "hungdz2001/kido-dms-assistant-extension";
 var GITHUB_RELEASE_TAG = "v" + EXTENSION_LATEST_VERSION;
 var GITHUB_RELEASE_FILE = "dms-assistant-extension-v" + EXTENSION_LATEST_VERSION + ".zip";
-var EXTENSION_DOWNLOAD_SHA256 = "c66576e3d34486f5db22865b04acf51f75b6265943e24088cf19bc6692063d1b";
-var EXTENSION_RELEASE_ID = "v1.2.2";
-var EXTENSION_PUBLISHED_AT = "2026-06-11T04:35:55.952Z";
 var rateBucket = {};
 
 function cleanText(value, max) {
@@ -40,8 +37,7 @@ function workerCapabilities(env) {
   return {
     attachments: true,
     telegram_actions: true,
-    ticket_sync: !!ticketStore(env),
-    telegram_webhook_secret: !!(runtimeEnv(env).TELEGRAM_WEBHOOK_SECRET)
+    ticket_sync: !!ticketStore(env)
   };
 }
 
@@ -111,26 +107,6 @@ function base64ByteLength(value) {
   return Math.max(0, Math.floor(text.length * 3 / 4) - padding);
 }
 
-var allowedAttachmentMimeTypes = {
-  "application/vnd.ms-excel": true,
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": true,
-  "text/csv": true,
-  "text/plain": true,
-  "application/octet-stream": true
-};
-
-var allowedAttachmentExtensions = {
-  ".xls": true,
-  ".xlsx": true,
-  ".csv": true,
-  ".txt": true
-};
-
-function attachmentExtension(filename) {
-  var match = /(\.[A-Za-z0-9]+)$/.exec(String(filename || "").toLowerCase());
-  return match ? match[1] : "";
-}
-
 function validateAttachmentPayload(attachment) {
   if (!attachment) return { ok: true, value: null };
   if (typeof attachment !== "object") {
@@ -142,10 +118,6 @@ function validateAttachmentPayload(attachment) {
   if (!filename || !contentBase64) {
     return { ok: false, error: "Thieu ten file hoac noi dung file dinh kem." };
   }
-  var ext = attachmentExtension(filename);
-  if (!allowedAttachmentExtensions[ext]) {
-    return { ok: false, error: "Dinh dang file dinh kem khong duoc ho tro." };
-  }
   if (!/^[A-Za-z0-9+/]+={0,2}$/.test(contentBase64)) {
     return { ok: false, error: "Noi dung file dinh kem khong phai base64 hop le." };
   }
@@ -155,16 +127,11 @@ function validateAttachmentPayload(attachment) {
     return { ok: false, error: "File dinh kem qua lon." };
   }
 
-  var mimeType = cleanText(attachment.mime_type || "application/octet-stream", 120).toLowerCase();
-  if (!allowedAttachmentMimeTypes[mimeType]) {
-    return { ok: false, error: "MIME file dinh kem khong hop le." };
-  }
-
   return {
     ok: true,
     value: {
       filename: filename,
-      mime_type: mimeType,
+      mime_type: cleanText(attachment.mime_type || "application/octet-stream", 120),
       content_base64: contentBase64,
       size_bytes: sizeBytes,
       kind: normalizeChoice(attachment.kind, ["employee_create_result", "employee_update_result"], "employee_update_result")
@@ -232,34 +199,20 @@ function formatTelegramMessage(data) {
   }).join("\n");
 }
 
-function allowedCorsOrigin(request) {
-  var origin = request && request.headers ? request.headers.get("Origin") || "" : "";
-  if (!origin) return "*";
-  if (/^chrome-extension:\/\/[a-z0-9]+$/i.test(origin)) return origin;
-  if (origin === "https://admin2.kido.vn") return origin;
-  if (/^https:\/\/[^/]*chillwithdms\.workers\.dev$/i.test(origin)) return origin;
-  return "";
-}
-
-function corsHeaders(request) {
-  var origin = allowedCorsOrigin(request);
+function corsHeaders() {
   return {
-    "Access-Control-Allow-Origin": origin || "null",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Telegram-Bot-Api-Secret-Token",
+    "Access-Control-Allow-Headers": "Content-Type",
     "Content-Type": "application/json; charset=utf-8"
   };
 }
 
-function jsonResponse(body, status, request) {
+function jsonResponse(body, status) {
   return new Response(JSON.stringify(body), {
     status: status || 200,
-    headers: corsHeaders(request)
+    headers: corsHeaders()
   });
-}
-
-function isDisallowedCorsRequest(request) {
-  return !!(request && request.headers && request.headers.get("Origin") && !allowedCorsOrigin(request));
 }
 
 function clientKey(request) {
@@ -268,25 +221,9 @@ function clientKey(request) {
     "unknown";
 }
 
-async function isRateLimited(request, env) {
+function isRateLimited(request) {
   var key = clientKey(request);
   var now = Date.now();
-  var store = ticketStore(env);
-  if (store) {
-    try {
-      var kvKey = "rate:" + key;
-      var raw = await store.get(kvKey);
-      var kvBucket = raw ? JSON.parse(raw) : { count: 0, resetAt: now + RATE_WINDOW_MS };
-      if (now > kvBucket.resetAt) {
-        kvBucket = { count: 0, resetAt: now + RATE_WINDOW_MS };
-      }
-      kvBucket.count += 1;
-      await store.put(kvKey, JSON.stringify(kvBucket), { expirationTtl: Math.ceil(RATE_WINDOW_MS / 1000) + 10 });
-      return kvBucket.count > RATE_LIMIT;
-    } catch (e) {
-      // Fall back to memory if KV is temporarily unavailable.
-    }
-  }
   var bucket = rateBucket[key] || { count: 0, resetAt: now + RATE_WINDOW_MS };
   if (now > bucket.resetAt) {
     bucket = { count: 0, resetAt: now + RATE_WINDOW_MS };
@@ -306,9 +243,6 @@ function runtimeEnv(env) {
   }
   if (!resolved.SUPPORT_TICKETS && typeof SUPPORT_TICKETS !== "undefined") {
     resolved.SUPPORT_TICKETS = SUPPORT_TICKETS;
-  }
-  if (!resolved.TELEGRAM_WEBHOOK_SECRET && typeof TELEGRAM_WEBHOOK_SECRET !== "undefined") {
-    resolved.TELEGRAM_WEBHOOK_SECRET = TELEGRAM_WEBHOOK_SECRET;
   }
   return resolved;
 }
@@ -427,9 +361,6 @@ function extensionUpdateInfo(request) {
     latest_version: EXTENSION_LATEST_VERSION,
     min_supported_version: EXTENSION_MIN_SUPPORTED_VERSION,
     download_url: extensionDownloadUrl(),
-    download_sha256: EXTENSION_DOWNLOAD_SHA256,
-    release_id: EXTENSION_RELEASE_ID,
-    published_at: EXTENSION_PUBLISHED_AT,
     changelog_url: githubReleaseUrl("tag/" + GITHUB_RELEASE_TAG),
     release_title: "DMS Assistant " + EXTENSION_LATEST_VERSION,
     release_notes: [
@@ -438,7 +369,7 @@ function extensionUpdateInfo(request) {
       "Bổ sung ticket hỗ trợ nổi bật và cập nhật trạng thái nhanh hơn.",
       "Cải thiện gửi báo cáo lỗi kèm file kết quả."
     ],
-    updated_at: EXTENSION_PUBLISHED_AT
+    updated_at: "2026-06-10T00:00:00.000Z"
   };
 }
 
@@ -485,35 +416,21 @@ async function handleTicketStatus(request, env) {
   });
 }
 
-function validateTelegramWebhookSecret(request, env) {
-  var expected = cleanText(env && env.TELEGRAM_WEBHOOK_SECRET || "", 200);
-  if (!expected) return { ok: true, configured: false };
-  var received = request.headers.get("X-Telegram-Bot-Api-Secret-Token") || "";
-  if (received !== expected) {
-    return { ok: false, configured: true, error: "Telegram webhook secret khong hop le." };
-  }
-  return { ok: true, configured: true };
-}
-
 async function handleTelegramWebhook(request, env) {
   if (request.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Method not allowed" }, 405, request);
-  }
-  var secretCheck = validateTelegramWebhookSecret(request, env);
-  if (!secretCheck.ok) {
-    return jsonResponse({ ok: false, error: "Unauthorized" }, 401, request);
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
   }
   var update;
   try {
     update = JSON.parse(await request.text() || "{}");
   } catch (err) {
-    return jsonResponse({ ok: false, error: "JSON khong hop le." }, 400, request);
+    return jsonResponse({ ok: false, error: "JSON khong hop le." }, 400);
   }
 
   if (update.callback_query) {
     var callback = update.callback_query;
     var action = parseTicketAction(callback.data);
-    if (!action) return jsonResponse({ ok: true, ignored: true }, 200, request);
+    if (!action) return jsonResponse({ ok: true, ignored: true });
     if (env && env.TELEGRAM_BOT_TOKEN) {
       await callTelegramJson("answerCallbackQuery", {
         callback_query_id: callback.id,
@@ -548,30 +465,27 @@ async function handleTelegramWebhook(request, env) {
         }, env);
       }
     }
-    return jsonResponse({ ok: true, ticket: publicTicket(ticket), ticket_sync: ticketSync }, 200, request);
+    return jsonResponse({ ok: true, ticket: publicTicket(ticket), ticket_sync: ticketSync });
   }
 
   if (update.message && update.message.reply_to_message) {
     var replyText = (update.message.reply_to_message.text || update.message.reply_to_message.caption || "");
     var ticketId = ticketIdFromText(replyText);
-    if (!ticketId) return jsonResponse({ ok: true, ignored: true }, 200, request);
+    if (!ticketId) return jsonResponse({ ok: true, ignored: true });
     var replyTicket = await readTicket(env, ticketId) || { ticket_id: ticketId };
     replyTicket.latest_note = cleanText(update.message.text || update.message.caption || "", 1000);
     replyTicket.updated_at = new Date().toISOString();
     replyTicket.updated_by = cleanText(update.message.from && (update.message.from.first_name || update.message.from.username) || "Telegram", 120);
     await saveTicket(env, replyTicket);
-    return jsonResponse({ ok: true, ticket: publicTicket(replyTicket) }, 200, request);
+    return jsonResponse({ ok: true, ticket: publicTicket(replyTicket) });
   }
 
-  return jsonResponse({ ok: true, ignored: true }, 200, request);
+  return jsonResponse({ ok: true, ignored: true });
 }
 
 async function handleFeedback(request, env) {
   env = runtimeEnv(env);
   var url = new URL(request.url);
-  if (isDisallowedCorsRequest(request)) {
-    return jsonResponse({ ok: false, error: "Origin khong duoc phep." }, 403, request);
-  }
   if (url.pathname === "/ticket-status") {
     return handleTicketStatus(request, env);
   }
@@ -579,45 +493,45 @@ async function handleFeedback(request, env) {
     return handleTelegramWebhook(request, env);
   }
   if (url.pathname === "/extension-version") {
-    return jsonResponse(extensionUpdateInfo(request), 200, request);
+    return jsonResponse(extensionUpdateInfo(request));
   }
   if (url.pathname === EXTENSION_DOWNLOAD_PATH) {
     return extensionDownloadPage(request);
   }
   if (request.method === "OPTIONS") {
-    return jsonResponse(capabilityBody(env), 200, request);
+    return jsonResponse(capabilityBody(env));
   }
   if (url.pathname !== "/feedback") {
-    return jsonResponse({ ok: false, error: "Not found" }, 404, request);
+    return jsonResponse({ ok: false, error: "Not found" }, 404);
   }
   if (request.method === "GET") {
-    return jsonResponse(capabilityBody(env), 200, request);
+    return jsonResponse(capabilityBody(env));
   }
   if (request.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Method not allowed" }, 405, request);
+    return jsonResponse({ ok: false, error: "Method not allowed" }, 405);
   }
-  if (await isRateLimited(request, env)) {
-    return jsonResponse({ ok: false, error: "Gui qua nhanh, vui long thu lai sau." }, 429, request);
+  if (isRateLimited(request)) {
+    return jsonResponse({ ok: false, error: "Gui qua nhanh, vui long thu lai sau." }, 429);
   }
 
   var raw = await request.text();
   if (raw.length > MAX_PAYLOAD_LENGTH) {
-    return jsonResponse({ ok: false, error: "Payload qua lon." }, 413, request);
+    return jsonResponse({ ok: false, error: "Payload qua lon." }, 413);
   }
 
   var payload;
   try {
     payload = JSON.parse(raw || "{}");
   } catch (err) {
-    return jsonResponse({ ok: false, error: "JSON khong hop le." }, 400, request);
+    return jsonResponse({ ok: false, error: "JSON khong hop le." }, 400);
   }
 
   var validated = validateFeedbackPayload(payload);
   if (!validated.ok) {
-    return jsonResponse({ ok: false, error: validated.error }, 400, request);
+    return jsonResponse({ ok: false, error: validated.error }, 400);
   }
   if (!env || !env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) {
-    return jsonResponse({ ok: false, error: "Worker chua cau hinh TELEGRAM_BOT_TOKEN hoac TELEGRAM_CHAT_ID." }, 500, request);
+    return jsonResponse({ ok: false, error: "Worker chua cau hinh TELEGRAM_BOT_TOKEN hoac TELEGRAM_CHAT_ID." }, 500);
   }
 
   var ticket = {
@@ -639,7 +553,7 @@ async function handleFeedback(request, env) {
   var telegramRes = await sendTelegramMessage(validated.value, env);
   var telegramText = await telegramRes.text();
   if (!telegramRes.ok) {
-    return jsonResponse({ ok: false, error: "Telegram API loi: " + telegramText.slice(0, 500) }, 502, request);
+    return jsonResponse({ ok: false, error: "Telegram API loi: " + telegramText.slice(0, 500) }, 502);
   }
   var telegramJson = null;
   try { telegramJson = JSON.parse(telegramText); } catch (e) {}
@@ -653,7 +567,7 @@ async function handleFeedback(request, env) {
     var documentRes = await sendTelegramDocument(validated.value.attachment, env);
     var documentText = await documentRes.text();
     if (!documentRes.ok) {
-      return jsonResponse({ ok: false, error: "Da gui message nhung gui file that bai: " + documentText.slice(0, 500) }, 502, request);
+      return jsonResponse({ ok: false, error: "Da gui message nhung gui file that bai: " + documentText.slice(0, 500) }, 502);
     }
     attachmentSent = true;
   }
@@ -668,7 +582,7 @@ async function handleFeedback(request, env) {
     attachment_sent: attachmentSent,
     worker_version: WORKER_VERSION,
     capabilities: Object.assign({}, workerCapabilities(env), { ticket_sync: ticketSync })
-  }, 200, request);
+  });
 }
 
 if (typeof addEventListener === "function") {
@@ -684,7 +598,6 @@ if (typeof module !== "undefined" && module.exports) {
     formatTelegramMessage: formatTelegramMessage,
     runtimeEnv: runtimeEnv,
     validateAttachmentPayload: validateAttachmentPayload,
-    validateTelegramWebhookSecret: validateTelegramWebhookSecret,
     workerCapabilities: workerCapabilities,
     extensionUpdateInfo: extensionUpdateInfo,
     createTicketId: createTicketId,
