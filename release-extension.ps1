@@ -26,10 +26,10 @@ function Write-Utf8File([string]$Path, [string]$Content) {
 }
 
 function Replace-Required([string]$Text, [string]$Pattern, [string]$Replacement, [string]$Label) {
-  $next = [System.Text.RegularExpressions.Regex]::Replace($Text, $Pattern, $Replacement)
-  if ($next -eq $Text) {
-    throw "No replacement made for $Label"
+  if (-not [System.Text.RegularExpressions.Regex]::IsMatch($Text, $Pattern)) {
+    throw "No match found for $Label"
   }
+  $next = [System.Text.RegularExpressions.Regex]::Replace($Text, $Pattern, $Replacement)
   return $next
 }
 

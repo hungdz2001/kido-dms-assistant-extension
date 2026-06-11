@@ -54,6 +54,7 @@ function assertNoMojibake(label, value) {
   assert.equal(releaseScript.includes("Compress-Archive"), true);
   assert.equal(releaseScript.includes("wrangler deploy"), true);
   assert.equal(releaseScript.includes("EXTENSION_MIN_SUPPORTED_VERSION"), true);
+  assert.equal(releaseScript.includes("[System.Text.RegularExpressions.Regex]::IsMatch"), true);
   assert.equal(source.includes("copilot.k-ai.vn"), false);
   assert.equal(source.includes("kdc-mail-proxy"), false);
   assert.equal(source.includes("--lmb-font"), true);
