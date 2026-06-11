@@ -12,6 +12,8 @@ $ArtifactsDir = Join-Path $ProjectRoot "artifacts"
 $StageDir = Join-Path $ArtifactsDir "extension-package"
 $ZipName = "dms-assistant-extension-v$Version.zip"
 $ZipPath = Join-Path $ArtifactsDir $ZipName
+$ReleaseManifestName = "release-manifest.json"
+$ReleaseManifestPath = Join-Path $ArtifactsDir $ReleaseManifestName
 $NodePath = "C:\Users\tranc\Downloads\node-v20.18.0-win-x64\node.exe"
 $GhPath = "C:\Program Files\GitHub CLI\gh.exe"
 $NpxPath = "C:\Program Files\nodejs\npx.cmd"
@@ -34,6 +36,9 @@ function Replace-Required([string]$Text, [string]$Pattern, [string]$Replacement,
 }
 
 $ManifestPath = Join-Path $ProjectRoot "manifest.json"
+$CreatorPath = Join-Path $ProjectRoot "employee-account-creator.js"
+$WorkerPath = Join-Path $ProjectRoot "telegram-support-worker.js"
+$TestPath = Join-Path $ProjectRoot "employee-account-creator.test.cjs"
 $Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
 $OldVersion = [string]$Manifest.version
 
@@ -50,19 +55,17 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
   $ManifestText = Replace-Required $ManifestText '"version"\s*:\s*"[^"]+"' ('"version": "' + $Version + '"') "manifest version"
   Write-Utf8File $ManifestPath $ManifestText
 
-  $CreatorPath = Join-Path $ProjectRoot "employee-account-creator.js"
   $CreatorText = Read-Utf8File $CreatorPath
   $CreatorText = Replace-Required $CreatorText 'var EXTENSION_VERSION = "[^"]+";' ('var EXTENSION_VERSION = "' + $Version + '";') "extension version"
   Write-Utf8File $CreatorPath $CreatorText
 
-  $WorkerPath = Join-Path $ProjectRoot "telegram-support-worker.js"
   $WorkerText = Read-Utf8File $WorkerPath
   $WorkerText = Replace-Required $WorkerText 'var WORKER_VERSION = "[^"]+";' ('var WORKER_VERSION = "' + $Version + '";') "worker version"
   $WorkerText = Replace-Required $WorkerText 'var EXTENSION_LATEST_VERSION = "[^"]+";' ('var EXTENSION_LATEST_VERSION = "' + $Version + '";') "latest extension version"
   $WorkerText = Replace-Required $WorkerText 'var EXTENSION_MIN_SUPPORTED_VERSION = "[^"]+";' ('var EXTENSION_MIN_SUPPORTED_VERSION = "' + $MinSupportedVersion + '";') "minimum supported extension version"
+  $WorkerText = Replace-Required $WorkerText 'var EXTENSION_RELEASE_ID = (?:GITHUB_RELEASE_TAG|"[^"]+");' ('var EXTENSION_RELEASE_ID = "v' + $Version + '";') "extension release id"
   Write-Utf8File $WorkerPath $WorkerText
 
-  $TestPath = Join-Path $ProjectRoot "employee-account-creator.test.cjs"
   $TestText = Read-Utf8File $TestPath
   $TestText = $TestText.Replace($OldVersion, $Version)
   $TestText = Replace-Required $TestText 'assert\.equal\(manifest\.version, "[^"]+"\);' ('assert.equal(manifest.version, "' + $Version + '");') "test manifest version"
@@ -87,8 +90,6 @@ if (-not (Test-Path -LiteralPath $GhPath)) {
 
 Push-Location $ProjectRoot
 try {
-  & $NodePath "employee-account-creator.test.cjs"
-
   if (Test-Path -LiteralPath $StageDir) {
     Remove-Item -LiteralPath $StageDir -Recurse -Force
   }
@@ -107,6 +108,26 @@ try {
     Remove-Item -LiteralPath $ZipPath -Force
   }
   Compress-Archive -Path (Join-Path $StageDir "*") -DestinationPath $ZipPath -Force
+  $zipHash = (Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $publishedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+  $releaseManifest = [ordered]@{
+    version = $Version
+    min_supported_version = $MinSupportedVersion
+    release_id = "v$Version"
+    filename = $ZipName
+    sha256 = $zipHash
+    size_bytes = (Get-Item -LiteralPath $ZipPath).Length
+    published_at = $publishedAt
+  }
+  $releaseManifestJson = $releaseManifest | ConvertTo-Json -Depth 4
+  Write-Utf8File $ReleaseManifestPath $releaseManifestJson
+
+  $WorkerText = Read-Utf8File $WorkerPath
+  $WorkerText = Replace-Required $WorkerText 'var EXTENSION_DOWNLOAD_SHA256 = "[a-f0-9]+";' ('var EXTENSION_DOWNLOAD_SHA256 = "' + $zipHash + '";') "extension download sha256"
+  $WorkerText = Replace-Required $WorkerText 'var EXTENSION_PUBLISHED_AT = "[^"]+";' ('var EXTENSION_PUBLISHED_AT = "' + $publishedAt + '";') "extension published at"
+  Write-Utf8File $WorkerPath $WorkerText
+
+  & $NodePath "employee-account-creator.test.cjs"
 
   $tag = "v$Version"
   $oldErrorActionPreference = $ErrorActionPreference
@@ -118,8 +139,9 @@ try {
 
   if ($releaseExists) {
     & $GhPath release upload $tag $ZipPath --repo $Repo --clobber
+    & $GhPath release upload $tag $ReleaseManifestPath --repo $Repo --clobber
   } else {
-    & $GhPath release create $tag $ZipPath --repo $Repo --title "DMS Assistant $Version" --notes "DMS Assistant $Version"
+    & $GhPath release create $tag $ZipPath $ReleaseManifestPath --repo $Repo --title "DMS Assistant $Version" --notes "DMS Assistant $Version"
   }
 
   if (-not $SkipDeploy) {

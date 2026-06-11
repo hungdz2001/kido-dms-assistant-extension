@@ -17,7 +17,7 @@ Giải nén file ZIP, mở `chrome://extensions`, bật **Developer mode**, rồ
 Chạy script:
 
 ```powershell
-.\release-extension.ps1 -Version 1.2.1
+.\release-extension.ps1 -Version 1.2.2
 ```
 
 Script sẽ cập nhật version, chạy test, đóng gói ZIP, tạo GitHub Release và deploy Worker để người dùng nhận thông báo cập nhật trong DMS Assistant.

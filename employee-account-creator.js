@@ -4,7 +4,7 @@
   var WORKER_ORIGIN = "";
   var SEND_PATH = "";
   var FEEDBACK_WORKER_URL = "https://kdc-employee-support.chillwithdms.workers.dev/feedback";
-  var EXTENSION_VERSION = "1.2.1";
+  var EXTENSION_VERSION = "1.2.2";
   var STORAGE_KEY = "lmb_last_sent_signature_v1";
   var EMPLOYEE_BATCH_KEY = "lmb_employee_batch_v1";
   var EMPLOYEE_QUEUE_HASH_KEY = "lmb_employee_queue";
@@ -21,7 +21,6 @@
   var ADMIN_EMPLOYEE_BAKERY_URL = "https://admin2.kido.vn/userManager/list?status=ACTIVE";
   var ADMIN_EMPLOYEE_OIL_URL = "https://admin2.kido.vn/userManager/list";
   var ADMIN_EMPLOYEE_URL = ADMIN_EMPLOYEE_BAKERY_URL;
-  var DEFAULT_EMPLOYEE_PASSWORD = "Datchitieu@2025";
   var EMPLOYEE_UPDATE_QUEUE_TYPE = "employee_update";
   var UPDATE_TASK_RESIGNATION = "resignation";
   var UPDATE_TASK_MID_AUTUMN = "add_mid_autumn";
@@ -73,6 +72,46 @@
     return Math.max(0, Math.floor(text.length * 3 / 4) - padding);
   }
 
+  function redactSensitiveValue(value) {
+    return cleanField(value) ? "[REDACTED]" : "";
+  }
+
+  function maskSensitivePhone(value) {
+    var digits = String(value || "").replace(/\D/g, "");
+    if (!digits) return "";
+    var tail = digits.slice(-4);
+    return tail ? "***" + tail : "";
+  }
+
+  function redactEmployeeResult(result) {
+    var copy = Object.assign({}, result || {});
+    copy.generated_password = redactSensitiveValue(copy.generated_password);
+    return copy;
+  }
+
+  function redactEmployeeResults(results) {
+    return (results || []).map(redactEmployeeResult);
+  }
+
+  function redactEmployeeResultForSupport(result) {
+    var copy = redactEmployeeResult(result);
+    copy.phone = maskSensitivePhone(copy.phone);
+    return copy;
+  }
+
+  function redactEmployeeResultsForSupport(results) {
+    return (results || []).map(redactEmployeeResultForSupport);
+  }
+
+  function redactSensitiveTextForSupport(value) {
+    var text = String(value || "");
+    text = text.replace(/((?:mật|mat)\s+kh(?:ẩ|a)u[^:\n]*:\s*)([^\s,;]+)/gi, "$1[REDACTED]");
+    text = text.replace(/\b(?:\+?84|0)\d{8,10}\b/g, function(match) {
+      return maskSensitivePhone(match);
+    });
+    return text;
+  }
+
   function normalizeSupportAttachment(attachment) {
     if (!attachment || typeof attachment !== "object") return { attachment: null, note: "" };
     var filename = limitText(attachment.filename, 160);
@@ -99,7 +138,7 @@
 
   function buildSupportFeedbackPayload(input) {
     input = input || {};
-    var message = limitText(input.message, 5000);
+    var message = limitText(redactSensitiveTextForSupport(input.message), 5000);
     if (!message) throw new Error("Nhap noi dung phan hoi truoc khi gui.");
     var attachmentInfo = normalizeSupportAttachment(input.attachment);
     if (attachmentInfo.note) {
@@ -115,8 +154,8 @@
       context: {
         url: limitText(input.url || (root.location && root.location.href) || "", 500),
         time: input.time || new Date().toISOString(),
-        log: limitText(input.log || "", 4000),
-        command: limitText(input.command || "", 500)
+        log: limitText(redactSensitiveTextForSupport(input.log || ""), 4000),
+        command: limitText(redactSensitiveTextForSupport(input.command || ""), 500)
       }
     };
     if (attachmentInfo.attachment) payload.attachment = attachmentInfo.attachment;
@@ -648,7 +687,7 @@
     employee = employee || {};
     return Object.assign({}, employee, {
       generated_username: employee.username || employee.employee_code || "",
-      generated_password: DEFAULT_EMPLOYEE_PASSWORD,
+      generated_password: "",
       create_status: "",
       created_time: new Date().toLocaleString("vi-VN"),
       create_error: ""
@@ -856,7 +895,7 @@
         return "<th>" + escapeHtml(col[1]) + "</th>";
       }).join("") + "</tr>"
     ];
-    (results || []).forEach(function(item) {
+    redactEmployeeResults(results).forEach(function(item) {
       rows.push("<tr>" + columns.map(function(col) {
         var style = textColumns[col[0]] ? " style=\"mso-number-format:'\\@';\"" : "";
         return "<td" + style + ">" + escapeHtml(item[col[0]] || "") + "</td>";
@@ -1153,7 +1192,7 @@
   function buildEmployeeResultAttachment(results) {
     return buildWorkbookAttachment(
       "ket-qua-tao-nhan-vien-" + new Date().toISOString().slice(0, 10) + ".xls",
-      buildEmployeeResultWorkbook(results),
+      buildEmployeeResultWorkbook(redactEmployeeResultsForSupport(results)),
       "employee_create_result"
     );
   }
@@ -1388,6 +1427,7 @@
   var latestSupportLog = "";
   var latestResultAttachment = null;
   var latestSupportTicket = null;
+  var latestExtensionUpdateInfo = null;
   var supportTicketPollTimer = null;
 
   function toast(message, state) {
@@ -1710,6 +1750,21 @@
     }
   }
 
+  function shortChecksum(value) {
+    var text = cleanField(value || "").toLowerCase();
+    return /^[a-f0-9]{64}$/.test(text) ? text.slice(0, 12) : "";
+  }
+
+  function refreshBuildMetadataView(info) {
+    var el = typeof document !== "undefined" ? document.getElementById("lmb_build_meta") : null;
+    if (!el) return;
+    var data = info || latestExtensionUpdateInfo || {};
+    var checksum = shortChecksum(data.download_sha256);
+    el.textContent = checksum
+      ? "Build v" + installedExtensionVersion() + " · SHA256 " + checksum
+      : "Build v" + installedExtensionVersion() + " · checksum đang kiểm tra";
+  }
+
   async function checkExtensionUpdate() {
     var res = await fetch(supportEndpoint("/extension-version?current=" + encodeURIComponent(installedExtensionVersion())), {
       method: "GET",
@@ -1719,6 +1774,8 @@
     try { json = await res.json(); } catch (e) {}
     if (!res.ok || !json || json.ok !== true) return null;
     json = applyRequiredUpdateTestMode(json);
+    latestExtensionUpdateInfo = json;
+    refreshBuildMetadataView(json);
     renderExtensionUpdateBanner(json);
     return json;
   }
@@ -1791,6 +1848,17 @@
     return info.attachment || null;
   }
 
+  function sanitizeLatestResultAttachmentForStorage(attachment) {
+    if (!attachment) return null;
+    return {
+      filename: attachment.filename || "",
+      mime_type: attachment.mime_type || "",
+      size_bytes: Number(attachment.size_bytes) || 0,
+      kind: attachment.kind || "",
+      stored_at: new Date().toISOString()
+    };
+  }
+
   async function buildManualSupportAttachment(file) {
     if (!file) throw new Error("Chua chon file ket qua.");
     var filename = cleanField(file.name || "ket-qua-automation.xls");
@@ -1832,7 +1900,8 @@
     latestResultAttachment = normalizeLatestResultAttachment(attachment);
     refreshLatestResultAttachmentUi();
     if (latestResultAttachment) {
-      chromeStorageSet({ [LAST_RESULT_ATTACHMENT_KEY]: latestResultAttachment }).catch(function() {});
+      var storedAttachment = sanitizeLatestResultAttachmentForStorage(latestResultAttachment);
+      chromeStorageSet({ [LAST_RESULT_ATTACHMENT_KEY]: storedAttachment }).catch(function() {});
     } else {
       chromeStorageRemove(LAST_RESULT_ATTACHMENT_KEY).catch(function() {});
     }
@@ -2555,6 +2624,7 @@
       '<label class="lmb-check" for="lmb_feedback_attach_latest"><input id="lmb_feedback_attach_latest" type="checkbox" disabled /><span>Đính kèm file kết quả gần nhất<small id="lmb_feedback_attach_hint">Chưa có file kết quả trong phiên hiện tại.</small></span></label>' +
       '<div class="lmb-support-actions"><button id="lmb_feedback_pick_attachment" class="lmb-btn" type="button">Chọn file kết quả</button><button id="lmb_feedback_clear_attachment" class="lmb-btn" type="button" hidden>Gỡ file</button></div>' +
       '<div class="lmb-ticket-card lmb-ticket-status-empty" id="lmb_ticket_status"><div class="lmb-ticket-title">Yêu cầu hỗ trợ</div><div class="lmb-ticket-empty">Chưa có ticket hỗ trợ.</div></div>' +
+      '<div class="lmb-log-preview" id="lmb_build_meta">Build v' + escapeHtml(EXTENSION_VERSION) + ' · checksum đang kiểm tra</div>' +
       '<div class="lmb-support-actions"><button id="lmb_ticket_refresh" class="lmb-btn" type="button">Làm mới trạng thái</button></div>' +
       '<div class="lmb-support-actions"><button id="lmb_feedback_ping" class="lmb-btn" type="button">Kiểm tra kết nối</button><button id="lmb_feedback_send" class="lmb-btn lmb-btn-primary" type="button">Gửi Telegram</button></div>' +
       '</div>' +
@@ -2600,6 +2670,7 @@
     loadLatestResultAttachment().catch(function() {
       refreshLatestResultAttachmentUi();
     });
+    refreshBuildMetadataView();
     refreshSupportTicketStatusView();
     startSupportTicketPolling();
     checkExtensionUpdate().catch(function() {});

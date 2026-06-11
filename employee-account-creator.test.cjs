@@ -18,7 +18,7 @@ function assertNoMojibake(label, value) {
 
 {
   assert.equal(bridge.EXTENSION_AUTHOR, "HƯNG ĐẸP TRAI");
-  assert.equal(manifest.version, "1.2.1");
+  assert.equal(manifest.version, "1.2.2");
   assert.equal(bridge.EXTENSION_VERSION, manifest.version);
   assert.match(bridge.buildUiFooterHtml(), /HƯNG ĐẸP TRAI/);
   assert.equal(bridge.TOOLBAR_VISIBLE_KEY, "lmb_toolbar_visible_v1");
@@ -54,12 +54,19 @@ function assertNoMojibake(label, value) {
   assert.equal(releaseScript.includes("Compress-Archive"), true);
   assert.equal(releaseScript.includes("wrangler deploy"), true);
   assert.equal(releaseScript.includes("EXTENSION_MIN_SUPPORTED_VERSION"), true);
+  assert.equal(releaseScript.includes("EXTENSION_DOWNLOAD_SHA256"), true);
+  assert.equal(releaseScript.includes("Get-FileHash"), true);
+  assert.equal(releaseScript.includes("release-manifest.json"), true);
   assert.equal(releaseScript.includes("[System.Text.RegularExpressions.Regex]::IsMatch"), true);
   assert.equal(releaseScript.includes("$releaseViewCode"), true);
   assert.equal(source.includes("copilot.k-ai.vn"), false);
   assert.equal(source.includes("kdc-mail-proxy"), false);
   assert.equal(source.includes("--lmb-font"), true);
   assert.equal(source.includes("Segoe UI"), true);
+  assert.equal(source.includes("DEFAULT_EMPLOYEE_PASSWORD"), false);
+  assert.equal(source.includes("Datchitieu@2025"), false);
+  assert.equal(source.includes("function redactSensitiveValue"), true);
+  assert.equal(source.includes("function maskSensitivePhone"), true);
   const styleBody = source.match(/function ensureUiStyles[\s\S]+?function setFabLabel/)[0];
   const styleBodyWithoutFontVar = styleBody.replace(/--lmb-font:[^;]+;/g, "");
   assert.deepEqual(styleBodyWithoutFontVar.match(/font:[^";]*Arial,sans-serif/g) || [], []);
@@ -101,13 +108,13 @@ function assertNoMojibake(label, value) {
   assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.1" }, "1.2.1"), false);
   assert.equal(typeof bridge.buildRequiredUpdateTestInfo, "function");
   const forcedUpdateInfo = bridge.buildRequiredUpdateTestInfo({
-    latest_version: "1.2.1",
-    min_supported_version: "1.2.1",
+    latest_version: "1.2.2",
+    min_supported_version: "1.2.2",
     release_notes: ["Bản production"]
-  }, "1.2.1");
-  assert.equal(forcedUpdateInfo.latest_version, "1.2.2");
-  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.2");
-  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.1"), true);
+  }, "1.2.2");
+  assert.equal(forcedUpdateInfo.latest_version, "1.2.3");
+  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.3");
+  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.2"), true);
   assert.equal(forcedUpdateInfo.release_notes[0], "Chế độ kiểm thử bắt buộc cập nhật trên máy hiện tại.");
   assert.equal(source.includes("UPDATE_REQUIRED_TEST_KEY"), true);
   assert.equal(source.includes("applyRequiredUpdateTestMode"), true);
@@ -118,6 +125,9 @@ function assertNoMojibake(label, value) {
   assert.equal(source.includes("UPDATE_NOTICE_SNOOZE_KEY"), true);
   assert.equal(source.includes("function checkExtensionUpdate"), true);
   assert.equal(source.includes("function renderExtensionUpdateBanner"), true);
+  assert.equal(source.includes("function refreshBuildMetadataView"), true);
+  assert.equal(source.includes("lmb_build_meta"), true);
+  assert.equal(source.includes("download_sha256"), true);
   assert.equal(source.includes("lmb_update_notice"), true);
   assert.equal(source.includes("lmb_update_download"), true);
   assert.equal(source.includes("lmb_update_changelog"), true);
@@ -252,7 +262,7 @@ function assertNoMojibake(label, value) {
     command: "can them nut bao loi nhanh"
   });
   assert.equal(payload.source, "employee-extension");
-  assert.equal(payload.version, "1.2.1");
+  assert.equal(payload.version, "1.2.2");
   assert.equal(payload.type, "feature");
   assert.equal(payload.urgency, "high");
   assert.equal(payload.sender, "Admin NPP");
@@ -346,7 +356,8 @@ function assertNoMojibake(label, value) {
   assert.equal(source.includes("function rememberLatestResultAttachment"), true);
   assert.equal(source.includes("function loadLatestResultAttachment"), true);
   assert.equal(source.includes("chromeStorageGet(LAST_RESULT_ATTACHMENT_KEY)"), true);
-  assert.equal(source.includes("LAST_RESULT_ATTACHMENT_KEY]: latestResultAttachment"), true);
+  assert.equal(source.includes("LAST_RESULT_ATTACHMENT_KEY]: latestResultAttachment"), false);
+  assert.equal(source.includes("function sanitizeLatestResultAttachmentForStorage"), true);
   assert.equal(source.includes("function saveLatestSupportTicket"), true);
   assert.equal(source.includes("function pollLatestSupportTicketStatus"), true);
   assert.equal(source.includes("attachment: attachLatest && latestResultAttachment ? latestResultAttachment : null"), true);
@@ -383,21 +394,30 @@ function assertNoMojibake(label, value) {
   assert.equal(typeof supportWorker.ticketStatusLabel, "function");
   assert.equal(typeof supportWorker.validateFeedbackPayload, "function");
   assert.equal(typeof supportWorker.formatTelegramMessage, "function");
-  assert.equal(supportWorker.WORKER_VERSION, "1.2.1");
+  assert.equal(supportWorker.WORKER_VERSION, "1.2.2");
   assert.equal(typeof supportWorker.extensionUpdateInfo, "function");
   const extensionInfo = supportWorker.extensionUpdateInfo();
-  assert.equal(extensionInfo.latest_version, "1.2.1");
-  assert.equal(extensionInfo.min_supported_version, "1.2.1");
-  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.1\/dms-assistant-extension-v1\.2\.1\.zip$/);
-  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.1$/);
+  assert.equal(extensionInfo.latest_version, "1.2.2");
+  assert.equal(extensionInfo.min_supported_version, "1.2.2");
+  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.2\/dms-assistant-extension-v1\.2\.2\.zip$/);
+  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.2$/);
+  assert.match(extensionInfo.download_sha256, /^[a-f0-9]{64}$/);
+  assert.match(extensionInfo.release_id, /^v1\.2\.2$/);
+  assert.match(extensionInfo.published_at, /^\d{4}-\d{2}-\d{2}T/);
   assert.equal(workerSource.includes("GITHUB_RELEASE_REPO"), true);
+  assert.match(workerSource, /TELEGRAM_WEBHOOK_SECRET/);
+  assert.match(workerSource, /validateTelegramWebhookSecret/);
+  assert.match(workerSource, /allowedAttachmentMimeTypes/);
+  assert.match(workerSource, /rate:/);
   assert.equal(Array.isArray(extensionInfo.release_notes), true);
   assert.match(workerSource, /\/extension-version/);
   assert.deepEqual(supportWorker.workerCapabilities({ SUPPORT_TICKETS: { get() {}, put() {} } }), {
     attachments: true,
     telegram_actions: true,
-    ticket_sync: true
+    ticket_sync: true,
+    telegram_webhook_secret: false
   });
+  assert.equal(supportWorker.workerCapabilities({ TELEGRAM_WEBHOOK_SECRET: "secret" }).telegram_webhook_secret, true);
   assert.equal(supportWorker.workerCapabilities({}).ticket_sync, false);
   assert.match(supportWorker.createTicketId(new Date("2026-06-10T01:02:03Z"), function() { return 0.1; }), /^KIDO-20260610-/);
   assert.equal(supportWorker.ticketStatusLabel("processing"), "Đang xử lý");
@@ -598,26 +618,26 @@ function assertNoMojibake(label, value) {
     create_clicked: false,
     modal_closed: false,
     generated_username: "TEST6868_1",
-    generated_password: "Datchitieu@2025"
+    generated_password: "TempPass@2026!"
   }), false);
   assert.equal(bridge.isEmployeeCreateCompleteAfterSubmit({
     create_clicked: true,
     modal_closed: false,
     generated_username: "TEST6868_1",
-    generated_password: "Datchitieu@2025"
+    generated_password: "TempPass@2026!"
   }), false);
   assert.equal(bridge.isEmployeeCreateCompleteAfterSubmit({
     create_clicked: true,
     modal_closed: false,
     row_visible: true,
     generated_username: "TEST6868_1",
-    generated_password: "Datchitieu@2025"
+    generated_password: "TempPass@2026!"
   }), true);
   assert.equal(bridge.isEmployeeCreateCompleteAfterSubmit({
     create_clicked: true,
     modal_closed: true,
     generated_username: "TEST6868_1",
-    generated_password: "Datchitieu@2025"
+    generated_password: "TempPass@2026!"
   }), true);
 }
 
@@ -632,7 +652,7 @@ function assertNoMojibake(label, value) {
     username: "TEST6868_5"
   });
   assert.equal(result.generated_username, "TEST6868_5");
-  assert.equal(result.generated_password, "Datchitieu@2025");
+  assert.equal(result.generated_password, "");
   assert.equal(result.create_error, "");
 }
 
@@ -795,13 +815,13 @@ function assertNoMojibake(label, value) {
   const text = [
     "Thông tin đăng nhập",
     "Tên đăng nhập: TEST6868_2",
-    "Mật khẩu mặc định: Datchitieu@2025",
+    "Mật khẩu mặc định: TempPass@2026!",
     "Mật khẩu này cần được thay đổi trong lần đăng nhập đầu tiên"
   ].join("\n");
   const credentials = bridge.parseGeneratedCredentialsText(text);
   assert.deepEqual(credentials, {
     generated_username: "TEST6868_2",
-    generated_password: "Datchitieu@2025"
+    generated_password: "TempPass@2026!"
   });
 }
 
@@ -814,13 +834,13 @@ function assertNoMojibake(label, value) {
     "Trang thai: Dang hoat dong",
     "Thong tin dang nhap",
     "Ten dang nhap: TEST6868_3",
-    "Mat khau mac dinh: Datchitieu@2025",
+    "Mat khau mac dinh: TempPass@2026!",
     "Mat khau nay can duoc thay doi trong lan dang nhap dau tien"
   ].join("\n");
   const credentials = bridge.parseGeneratedCredentialsText(text);
   assert.deepEqual(credentials, {
     generated_username: "TEST6868_3",
-    generated_password: "Datchitieu@2025"
+    generated_password: "TempPass@2026!"
   });
 }
 
@@ -879,7 +899,7 @@ function assertNoMojibake(label, value) {
       phone: "0975659059",
       username: "KDBDN0108",
       generated_username: "KDBDN0108",
-      generated_password: "Datchitieu@2025",
+      generated_password: "TempPass@2026!",
       create_status: "Thành công",
       create_error: ""
     }
@@ -891,7 +911,8 @@ function assertNoMojibake(label, value) {
   assert.match(html, /Thành công/);
   assert.match(html, /Content-Type/);
   assert.match(html, /font-family:Segoe UI/);
-  assert.match(html, /Datchitieu@2025/);
+  assert.doesNotMatch(html, /TempPass@2026!/);
+  assert.match(html, /\[REDACTED\]/);
   assert.match(html, /mso-number-format:'\\@'/);
   assert.match(html, /0975659059/);
   const downloadEmployeeResultsBody = source.match(/function downloadEmployeeResults[\s\S]+?function downloadEmployeeUpdateResults/)[0];
@@ -901,7 +922,7 @@ function assertNoMojibake(label, value) {
       full_name: "Nguyễn Văn A",
       employee_code: "KDBDN0108",
       generated_username: "KDBDN0108",
-      generated_password: "Datchitieu@2025",
+      generated_password: "TempPass@2026!",
       create_status: "Lỗi",
       create_error: "Không tạo được tài khoản"
     }
@@ -912,6 +933,8 @@ function assertNoMojibake(label, value) {
   assert.equal(decodedCreateAttachment.startsWith("\uFEFF"), true);
   assert.match(decodedCreateAttachment, /Nguyễn Văn A/);
   assert.match(decodedCreateAttachment, /Không tạo được tài khoản/);
+  assert.doesNotMatch(decodedCreateAttachment, /TempPass@2026!/);
+  assert.match(decodedCreateAttachment, /\[REDACTED\]/);
 }
 
 {
@@ -1028,6 +1051,15 @@ async function runAsyncTests() {
     size_bytes: Buffer.byteLength(attachmentContent, "utf8"),
     kind: "employee_create_result"
   };
+  const invalidAttachment = supportWorker.validateAttachmentPayload({
+    filename: "ket-qua.exe",
+    mime_type: "application/x-msdownload",
+    content_base64: Buffer.from("unsafe", "utf8").toString("base64"),
+    size_bytes: 6,
+    kind: "employee_create_result"
+  });
+  assert.equal(invalidAttachment.ok, false);
+  assert.match(invalidAttachment.error, /khong duoc ho tro|khong hop le/i);
   function makeTicketKv() {
     const store = new Map();
     return {
@@ -1048,10 +1080,11 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const optionsJson = await optionsRes.json();
     assert.equal(optionsJson.ok, true);
-    assert.equal(optionsJson.worker_version, "1.2.1");
+    assert.equal(optionsJson.worker_version, "1.2.2");
     assert.equal(optionsJson.capabilities.attachments, true);
     assert.equal(optionsJson.capabilities.telegram_actions, true);
     assert.equal(optionsJson.capabilities.ticket_sync, true);
+    assert.equal(optionsJson.capabilities.telegram_webhook_secret, false);
 
     const getRes = await supportWorker.handleFeedback(new Request("https://worker.test/feedback", {
       method: "GET"
@@ -1064,9 +1097,10 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const versionJson = await versionRes.json();
     assert.equal(versionJson.ok, true);
-    assert.equal(versionJson.latest_version, "1.2.1");
-    assert.equal(versionJson.min_supported_version, "1.2.1");
-    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.1\/dms-assistant-extension-v1\.2\.1\.zip/);
+    assert.equal(versionJson.latest_version, "1.2.2");
+    assert.equal(versionJson.min_supported_version, "1.2.2");
+    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.2\/dms-assistant-extension-v1\.2\.2\.zip/);
+    assert.match(versionJson.download_sha256, /^[a-f0-9]{64}$/);
 
     const callsWithoutAttachment = [];
     global.fetch = async function(url, options) {
@@ -1121,7 +1155,7 @@ async function runAsyncTests() {
     assert.equal(jsonWithAttachment.ok, true);
     assert.equal(jsonWithAttachment.attachment_received, true);
     assert.equal(jsonWithAttachment.attachment_sent, true);
-    assert.equal(jsonWithAttachment.worker_version, "1.2.1");
+    assert.equal(jsonWithAttachment.worker_version, "1.2.2");
     assert.equal(callsWithAttachment.length, 2);
     assert.match(callsWithAttachment[0].url, /sendMessage/);
     assert.match(callsWithAttachment[1].url, /sendDocument/);
@@ -1152,6 +1186,24 @@ async function runAsyncTests() {
     assert.equal(jsonWithoutKv.capabilities.ticket_sync, false);
     assert.equal(callsWithoutKv.length, 2);
     assert.match(callsWithoutKv[1].url, /sendDocument/);
+
+    const missingSecretRes = await supportWorker.handleFeedback(new Request("https://worker.test/telegram-webhook", {
+      method: "POST",
+      body: JSON.stringify({})
+    }), {
+      TELEGRAM_WEBHOOK_SECRET: "telegram-secret"
+    });
+    assert.equal(missingSecretRes.status, 401);
+
+    const secretOkRes = await supportWorker.handleFeedback(new Request("https://worker.test/telegram-webhook", {
+      method: "POST",
+      headers: { "X-Telegram-Bot-Api-Secret-Token": "telegram-secret" },
+      body: JSON.stringify({})
+    }), {
+      TELEGRAM_WEBHOOK_SECRET: "telegram-secret"
+    });
+    const secretOkJson = await secretOkRes.json();
+    assert.equal(secretOkJson.ok, true);
 
     const callbackCalls = [];
     global.fetch = async function(url, options) {
