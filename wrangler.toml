@@ -1,0 +1,10 @@
+name = "kdc-employee-support"
+main = "telegram-support-worker.js"
+compatibility_date = "2026-06-09"
+
+[observability]
+enabled = true
+
+[[kv_namespaces]]
+binding = "SUPPORT_TICKETS"
+id = "a2182d04a9734c09af54bb020befeaab"

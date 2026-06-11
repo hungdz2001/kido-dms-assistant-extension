@@ -1,0 +1,44 @@
+{
+  "manifest_version": 3,
+  "name": "AUTO TẠO TÀI KHOẢN NHÂN VIÊN - HƯNG ĐẸP TRAI",
+  "version": "1.2.0",
+  "description": "Tự động import danh sách nhân sự và tạo tài khoản nhân viên trên DMS. Author: HƯNG ĐẸP TRAI.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://admin2.kido.vn/*",
+    "https://kdc-employee-support.chillwithdms.workers.dev/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://admin2.kido.vn/*"
+      ],
+      "js": [
+        "employee-account-creator.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/kido-helper-16.png",
+    "32": "icons/kido-helper-32.png",
+    "48": "icons/kido-helper-48.png",
+    "128": "icons/kido-helper-128.png"
+  },
+  "action": {
+    "default_title": "AUTO TẠO TÀI KHOẢN NHÂN VIÊN - HƯNG ĐẸP TRAI",
+    "default_icon": {
+      "16": "icons/kido-helper-16.png",
+      "32": "icons/kido-helper-32.png",
+      "48": "icons/kido-helper-48.png",
+      "128": "icons/kido-helper-128.png"
+    }
+  }
+}

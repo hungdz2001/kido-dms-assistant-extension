@@ -1,0 +1,8 @@
+.wrangler/
+artifacts/
+node_modules/
+.env
+.env.*
+*.log
+*.tmp
+*.bak
