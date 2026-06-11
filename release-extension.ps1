@@ -33,6 +33,12 @@ function Replace-Required([string]$Text, [string]$Pattern, [string]$Replacement,
   return $next
 }
 
+function Assert-LastExitCode([string]$Label) {
+  if ($LASTEXITCODE -ne 0) {
+    throw "$Label failed with exit code $LASTEXITCODE"
+  }
+}
+
 $ManifestPath = Join-Path $ProjectRoot "manifest.json"
 $Manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
 $OldVersion = [string]$Manifest.version
@@ -88,6 +94,7 @@ if (-not (Test-Path -LiteralPath $GhPath)) {
 Push-Location $ProjectRoot
 try {
   & $NodePath "employee-account-creator.test.cjs"
+  Assert-LastExitCode "employee-account-creator tests"
 
   if (Test-Path -LiteralPath $StageDir) {
     Remove-Item -LiteralPath $StageDir -Recurse -Force
@@ -118,12 +125,15 @@ try {
 
   if ($releaseExists) {
     & $GhPath release upload $tag $ZipPath --repo $Repo --clobber
+    Assert-LastExitCode "GitHub release upload"
   } else {
     & $GhPath release create $tag $ZipPath --repo $Repo --title "DMS Assistant $Version" --notes "DMS Assistant $Version"
+    Assert-LastExitCode "GitHub release create"
   }
 
   if (-not $SkipDeploy) {
     & $NpxPath wrangler deploy
+    Assert-LastExitCode "wrangler deploy"
   }
 
   Write-Host "Release ready: $ZipPath"

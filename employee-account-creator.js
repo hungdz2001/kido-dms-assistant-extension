@@ -4,7 +4,7 @@
   var WORKER_ORIGIN = "";
   var SEND_PATH = "";
   var FEEDBACK_WORKER_URL = "https://kdc-employee-support.chillwithdms.workers.dev/feedback";
-  var EXTENSION_VERSION = "1.2.1";
+  var EXTENSION_VERSION = "1.2.2";
   var STORAGE_KEY = "lmb_last_sent_signature_v1";
   var EMPLOYEE_BATCH_KEY = "lmb_employee_batch_v1";
   var EMPLOYEE_QUEUE_HASH_KEY = "lmb_employee_queue";
@@ -399,7 +399,7 @@
       ".lmb-update-notice{border:1px solid rgba(34,211,238,.36);border-left:4px solid #22d3ee;background:linear-gradient(135deg,rgba(8,47,73,.78),rgba(15,23,42,.82));border-radius:8px;padding:10px;display:grid;gap:8px}.lmb-update-notice[hidden]{display:none!important}.lmb-update-notice.is-required{border-left-color:#f97316;background:linear-gradient(135deg,rgba(124,45,18,.82),rgba(15,23,42,.82))}.lmb-update-head{display:flex;justify-content:space-between;gap:8px;align-items:center}.lmb-update-head span{font-weight:950;color:#f8fbff;font-size:12px}.lmb-update-head b{border-radius:999px;padding:4px 8px;background:rgba(34,211,238,.16);color:#a5f3fc;font-size:11px}.lmb-update-copy{color:#cfe5f7;font-size:11px;line-height:1.45}.lmb-update-notice ul{margin:0;padding-left:16px;color:#9fb5ca;font-size:11px;line-height:1.45}.lmb-update-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}",
       ".lmb-control-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:9px 10px;background:rgba(2,6,23,.96);border-top:1px solid rgba(148,163,184,.18);border-bottom:1px solid rgba(148,163,184,.16)}.lmb-tab-button{border:1px solid rgba(148,163,184,.25);background:rgba(15,23,42,.86);color:#9fb5ca;border-radius:8px;padding:8px 6px;font:900 12px/1.1 var(--lmb-font);cursor:pointer;white-space:nowrap}.lmb-tab-button:hover{color:#e0f2fe;border-color:rgba(34,211,238,.42)}.lmb-tab-button.is-active{background:linear-gradient(135deg,#0f766e,#0891b2);color:#fff;border-color:rgba(103,232,249,.72);box-shadow:0 8px 22px rgba(8,145,178,.24)}.lmb-tab-button.has-attention{border-color:#fb923c;background:rgba(154,52,18,.28);color:#fed7aa}.lmb-tab-button.is-active.has-attention{background:linear-gradient(135deg,#0f766e,#0891b2);color:#fff}.lmb-tab-panel{display:none;gap:10px}.lmb-tab-panel.is-active{display:grid}.lmb-tab-hint{font-size:12px;line-height:1.45;color:#8aa4bd}.lmb-log-panel{min-height:156px;max-height:260px;overflow:auto;border:1px solid rgba(148,163,184,.24);background:rgba(2,6,23,.52);border-radius:8px;padding:10px;color:#d8e7f5;font-size:12px;line-height:1.45;white-space:pre-wrap}.lmb-control-center.is-update-required #lmb_employee_import_button,.lmb-control-center.is-update-required #lmb_update_import_button{opacity:.48;filter:saturate(.65);cursor:not-allowed}",
       "#lmb_control_center{position:fixed;right:18px;bottom:20px;z-index:2147483647;width:min(390px,calc(100vw - 36px));background:#07111f;color:#e5f2ff;border:1px solid rgba(34,211,238,.22);border-radius:8px;box-shadow:0 24px 64px rgba(2,6,23,.5),0 0 0 1px rgba(255,255,255,.04) inset;overflow:hidden}.lmb-control-center{display:grid}.lmb-control-head{padding:14px;background:radial-gradient(circle at 20% 0,rgba(34,211,238,.18),transparent 38%),linear-gradient(135deg,#08111f,#0f172a 62%,#102334);color:#fff;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.lmb-control-brand{display:flex;align-items:center;gap:10px;min-width:0}.lmb-control-avatar{width:38px;height:38px;border-radius:8px;background:linear-gradient(135deg,#22d3ee,#14b8a6);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(34,211,238,.32);flex:0 0 auto}.lmb-control-avatar span{width:27px;height:22px;border-radius:7px;background:#e0f2fe;color:#0f172a;display:flex;align-items:center;justify-content:center;font:900 11px var(--lmb-font)}.lmb-ai-kicker{color:#67e8f9;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.lmb-control-title{font-weight:950;font-size:14px;line-height:1.25}.lmb-control-subtitle{margin-top:3px;color:#b6c9dd;font-size:12px;line-height:1.35}.lmb-control-body{padding:11px 12px 12px;display:grid;gap:10px;max-height:min(500px,calc(100vh - 190px));overflow:auto;background:linear-gradient(180deg,#07111f,#08111b)}.lmb-control-actions{display:grid;grid-template-columns:1fr;gap:8px}.lmb-control-primary{width:100%;border:1px solid rgba(103,232,249,.48);border-radius:8px;background:linear-gradient(135deg,#7c3aed,#0891b2);color:#fff;padding:12px;font:950 13px/1.2 var(--lmb-font);cursor:pointer;text-align:left;box-shadow:0 12px 28px rgba(8,145,178,.24)}.lmb-control-primary small{display:block;font-size:11px;font-weight:800;color:#d8f8ff;opacity:.95;margin-top:3px}.lmb-control-primary:hover{filter:brightness(1.06)}.lmb-control-primary:disabled{opacity:.65;cursor:not-allowed}.lmb-control-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:2px}.lmb-review-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,280px);gap:12px;align-items:start}.lmb-review-summary{display:grid;gap:8px}.lmb-review-next{font-weight:800;color:#0f172a;font-size:12px}",
-      "#lmb_admin_panel{position:fixed;left:18px;right:auto;bottom:20px;z-index:2147483647;width:min(430px,calc(100vw - 36px));border-radius:8px;box-shadow:0 18px 44px rgba(15,23,42,.28);background:#111827;color:white;overflow:hidden;font:13px/1.45 var(--lmb-font)}.lmb-admin-body{position:relative;padding:13px 42px 13px 14px;display:grid;gap:10px}.lmb-admin-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.lmb-admin-title{font-weight:900;color:#fff}.lmb-admin-message{color:#dbeafe;line-height:1.5}.lmb-admin-hint{font-size:12px;color:#cbd5e1;border-left:3px solid #38bdf8;padding-left:8px}.lmb-run-controls{display:flex;gap:8px;flex-wrap:wrap}@media(max-width:720px){#lmb_control_center{left:18px;right:18px;width:auto}.lmb-employee-card{left:12px;right:12px;bottom:12px;width:auto;max-height:calc(100vh - 24px)}#lmb_admin_panel{left:18px;right:18px;bottom:236px;width:auto}.lmb-review-grid{grid-template-columns:1fr}.lmb-toast{left:18px;right:18px;bottom:410px;max-width:none}body.lmb-review-open .lmb-toast{top:12px;bottom:auto}}"
+      "#lmb_admin_panel{position:fixed;left:18px;right:auto;bottom:20px;z-index:2147483647;width:min(560px,calc(100vw - 36px));border-radius:8px;box-shadow:0 22px 58px rgba(15,23,42,.36);background:#111827;color:white;overflow:hidden;font:13px/1.45 var(--lmb-font)}.lmb-admin-body{position:relative;padding:14px 42px 14px 14px;display:grid;gap:11px}.lmb-admin-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.lmb-admin-title{font-weight:950;color:#fff}.lmb-admin-message{color:#dbeafe;line-height:1.5}.lmb-admin-hint{font-size:12px;color:#cbd5e1;border-left:3px solid #38bdf8;padding-left:8px}.lmb-admin-progress{display:grid;gap:6px}.lmb-admin-progress-head{display:flex;justify-content:space-between;color:#cbd5e1;font-size:12px;font-weight:800}.lmb-admin-progress-track{height:8px;border-radius:999px;background:rgba(148,163,184,.22);overflow:hidden}.lmb-admin-progress-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,#22d3ee,#14b8a6);transition:width .18s ease}.lmb-admin-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.lmb-admin-stat{border:1px solid rgba(148,163,184,.24);border-radius:8px;padding:8px;background:rgba(15,23,42,.56)}.lmb-admin-stat span{display:block;color:#9fb5ca;font-size:11px;font-weight:800}.lmb-admin-stat b{display:block;margin-top:2px;color:#fff;font-size:18px;line-height:1}.lmb-admin-current,.lmb-admin-error{border:1px solid rgba(148,163,184,.24);border-left:3px solid #22d3ee;border-radius:8px;padding:9px;background:rgba(15,23,42,.5);display:grid;gap:3px}.lmb-admin-error{border-left-color:#f97316;background:rgba(124,45,18,.32)}.lmb-admin-card-label{color:#9fb5ca;font-size:11px;font-weight:900}.lmb-admin-card-title{color:#f8fafc;font-weight:950}.lmb-admin-card-meta{color:#cbd5e1;font-size:12px}.lmb-run-controls{display:flex;gap:8px;flex-wrap:wrap}@media(max-width:720px){#lmb_control_center{left:18px;right:18px;width:auto}.lmb-employee-card{left:12px;right:12px;bottom:12px;width:auto;max-height:calc(100vh - 24px)}#lmb_admin_panel{left:18px;right:18px;bottom:236px;width:auto}.lmb-review-grid{grid-template-columns:1fr}.lmb-toast{left:18px;right:18px;bottom:410px;max-width:none}body.lmb-review-open .lmb-toast{top:12px;bottom:auto}}"
     ].join("\n");
     document.head.appendChild(style);
   }
@@ -2897,7 +2897,8 @@
       adminPausePanelShown = true;
       adminPanel("Dang tam dung automation. Bam Tiep tuc de chay tiep hoac Dung han de huy queue.", {
         canResume: true,
-        canHardStop: true
+        canHardStop: true,
+        queue: queue
       });
     }
 
@@ -4071,14 +4072,15 @@
   async function requestAdminPause() {
     adminPauseRequested = true;
     adminPausePanelShown = true;
-    await updateStoredEmployeeQueue(function(queue) {
+    var queue = await updateStoredEmployeeQueue(function(queue) {
       queue.pause_requested = true;
       queue.status = "paused";
       queue.paused_at = new Date().toISOString();
     });
     adminPanel("Dang tam dung automation. Bam Tiep tuc de chay tiep hoac Dung han de huy queue.", {
       canResume: true,
-      canHardStop: true
+      canHardStop: true,
+      queue: queue
     });
   }
 
@@ -4097,7 +4099,8 @@
     }
     adminPanel("Dang tiep tuc automation tu vi tri da tam dung...", {
       canPause: true,
-      canHardStop: true
+      canHardStop: true,
+      queue: queue
     });
     if (!adminAutomationStarted && isEmployeeQueueRunnable(queue)) {
       await runAdminEmployeeQueue(queue);
@@ -4108,12 +4111,14 @@
     adminStopRequested = true;
     adminPauseRequested = false;
     adminPausePanelShown = false;
+    var stoppedQueue = null;
     try {
       var queue = await chromeStorageGet(EMPLOYEE_BATCH_KEY);
       if (queue) {
         queue.stop_requested = true;
         queue.status = "cancelled";
         queue.cancelled_at = new Date().toISOString();
+        stoppedQueue = queue;
         await chromeStorageSet((function() {
           var obj = {};
           obj[EMPLOYEE_BATCH_KEY] = queue;
@@ -4128,7 +4133,95 @@
     try {
       await closeOpenEmployeeModal();
     } catch (e3) {}
-    adminPanel("Da dung han automation. Queue cu da duoc huy. Neu muon chay lai, hay import file nhan su moi.", { status: "stopped" });
+    adminPanel("Da dung han automation. Queue cu da duoc huy. Neu muon chay lai, hay import file nhan su moi.", { status: "stopped", queue: stoppedQueue });
+  }
+
+  function employeeDashboardKind(queue) {
+    return queue && queue.queue_type === EMPLOYEE_UPDATE_QUEUE_TYPE ? "update" : "create";
+  }
+
+  function employeeDashboardStatusKey(queue, options) {
+    if (options && options.canResume) return "paused";
+    if (options && options.status) return options.status;
+    if (queue && queue.status) return queue.status;
+    if (options && options.canPause) return "running";
+    return "ready";
+  }
+
+  function employeeDashboardStatusLabel(statusKey) {
+    if (statusKey === "paused") return "Tạm dừng";
+    if (statusKey === "running") return "Đang chạy";
+    if (statusKey === "done") return "Hoàn tất";
+    if (statusKey === "stopped" || statusKey === "cancelled") return "Đã dừng";
+    if (statusKey === "error") return "Có lỗi";
+    return "Sẵn sàng";
+  }
+
+  function employeeDashboardTitle(queue, statusKey) {
+    if (statusKey === "done") return "Hoàn tất phiên chạy";
+    if (statusKey === "stopped" || statusKey === "cancelled") return "Đã dừng phiên chạy";
+    if (statusKey === "paused") return "Tạm dừng tại dòng";
+    return employeeDashboardKind(queue) === "update" ? "Đang cập nhật hồ sơ" : "Đang tạo nhân viên";
+  }
+
+  function employeeDashboardCurrentItem(queue) {
+    if (!queue || !Array.isArray(queue.employees) || !queue.employees.length) return null;
+    var item = employeeAtQueueIndex(queue, queue.current_index || 0) || queue.employees[queue.employees.length - 1];
+    if (!item) return null;
+    if (employeeDashboardKind(queue) === "update") {
+      return {
+        primary: cleanField(item.employee_code),
+        secondary: cleanField(item.full_name),
+        meta: employeeUpdateTaskLabel(item.update_task)
+      };
+    }
+    return {
+      primary: cleanField(item.employee_code),
+      secondary: cleanField(item.full_name),
+      meta: cleanField((item.position || "") + (item.position_form ? " -> " + item.position_form : ""))
+    };
+  }
+
+  function employeeDashboardLatestError(queue) {
+    var results = queue && Array.isArray(queue.results) ? queue.results : [];
+    var kind = employeeDashboardKind(queue);
+    for (var i = results.length - 1; i >= 0; i -= 1) {
+      var item = results[i];
+      var ok = kind === "update" ? isSuccessfulEmployeeUpdateResult(item) : isSuccessfulEmployeeResult(item);
+      if (!ok) {
+        return {
+          employee_code: cleanField(item && item.employee_code),
+          full_name: cleanField(item && item.full_name),
+          message: cleanField(item && (item.update_error || item.create_error || item.update_status || item.create_status || "Chưa rõ lỗi"))
+        };
+      }
+    }
+    return null;
+  }
+
+  function buildEmployeeAutomationDashboardState(queue, message, options) {
+    options = options || {};
+    var employees = queue && Array.isArray(queue.employees) ? queue.employees : [];
+    var results = queue && Array.isArray(queue.results) ? queue.results : [];
+    var total = employees.length;
+    var processed = Math.min(results.length, total || results.length);
+    var statusKey = employeeDashboardStatusKey(queue, options);
+    var successCount = results.filter(employeeDashboardKind(queue) === "update" ? isSuccessfulEmployeeUpdateResult : isSuccessfulEmployeeResult).length;
+    var errorCount = Math.max(0, processed - successCount);
+    return {
+      total: total,
+      processed: processed,
+      remaining: Math.max(0, total - processed),
+      successCount: successCount,
+      errorCount: errorCount,
+      currentItem: employeeDashboardCurrentItem(queue),
+      latestError: employeeDashboardLatestError(queue),
+      progressPercent: total ? Math.min(100, Math.max(0, Math.round(processed * 100 / total))) : 0,
+      statusKey: statusKey,
+      statusLabel: employeeDashboardStatusLabel(statusKey),
+      title: employeeDashboardTitle(queue, statusKey),
+      message: cleanField(message)
+    };
   }
 
   function adminPanel(message, options) {
@@ -4152,16 +4245,13 @@
     close.addEventListener("click", function() {
       if (panel.parentNode) panel.remove();
     });
-    var statusKey = options && options.canResume ? "paused" : options && options.canPause ? "running" : options && options.status ? options.status : "ready";
-    var statusLabel = statusKey === "paused" ? "Tạm dừng" :
-      statusKey === "running" ? "Đang chạy" :
-      statusKey === "done" ? "Hoàn tất" :
-      statusKey === "stopped" || statusKey === "cancelled" ? "Đã dừng" :
-      "Sẵn sàng";
+    var dashboard = buildEmployeeAutomationDashboardState(options && options.queue, message, options);
+    var statusKey = dashboard.statusKey;
+    var statusLabel = dashboard.statusLabel;
     var top = document.createElement("div");
     top.className = "lmb-admin-top";
     var title = document.createElement("div");
-    title.innerHTML = '<div class="lmb-admin-title">' + escapeHtml(EXTENSION_TITLE) + '</div>' +
+    title.innerHTML = '<div class="lmb-admin-title">' + escapeHtml(dashboard.title || EXTENSION_TITLE) + '</div>' +
       '<div class="lmb-admin-hint">Có thể tạm dừng để kiểm tra, hoặc dừng hẳn để hủy queue hiện tại.</div>';
     var pill = document.createElement("div");
     pill.innerHTML = buildStatusPillHtml(statusKey, statusLabel);
@@ -4172,6 +4262,39 @@
     text.textContent = message;
     body.appendChild(close);
     body.appendChild(top);
+    if (dashboard.total) {
+      var progress = document.createElement("div");
+      progress.className = "lmb-admin-progress";
+      progress.innerHTML =
+        '<div class="lmb-admin-progress-head"><span>' + escapeHtml(dashboard.processed + "/" + dashboard.total + " dòng") + '</span><b>' + escapeHtml(dashboard.progressPercent + "%") + '</b></div>' +
+        '<div class="lmb-admin-progress-track"><div class="lmb-admin-progress-bar" style="width:' + escapeHtml(dashboard.progressPercent) + '%"></div></div>';
+      body.appendChild(progress);
+      var stats = document.createElement("div");
+      stats.className = "lmb-admin-stats";
+      stats.innerHTML =
+        '<div class="lmb-admin-stat"><span>Thành công</span><b>' + escapeHtml(dashboard.successCount) + '</b></div>' +
+        '<div class="lmb-admin-stat"><span>Lỗi</span><b>' + escapeHtml(dashboard.errorCount) + '</b></div>' +
+        '<div class="lmb-admin-stat"><span>Còn lại</span><b>' + escapeHtml(dashboard.remaining) + '</b></div>';
+      body.appendChild(stats);
+      if (dashboard.currentItem) {
+        var current = document.createElement("div");
+        current.className = "lmb-admin-current";
+        current.innerHTML =
+          '<div class="lmb-admin-card-label">Đang xử lý</div>' +
+          '<div class="lmb-admin-card-title">' + escapeHtml(dashboard.currentItem.primary || "-") + '</div>' +
+          '<div class="lmb-admin-card-meta">' + escapeHtml([dashboard.currentItem.secondary, dashboard.currentItem.meta].filter(Boolean).join(" · ")) + '</div>';
+        body.appendChild(current);
+      }
+      if (dashboard.latestError) {
+        var latestError = document.createElement("div");
+        latestError.className = "lmb-admin-error";
+        latestError.innerHTML =
+          '<div class="lmb-admin-card-label">Lỗi gần nhất</div>' +
+          '<div class="lmb-admin-card-title">' + escapeHtml([dashboard.latestError.employee_code, dashboard.latestError.full_name].filter(Boolean).join(" · ") || "-") + '</div>' +
+          '<div class="lmb-admin-card-meta">' + escapeHtml(dashboard.latestError.message || "Chưa rõ lỗi") + '</div>';
+        body.appendChild(latestError);
+      }
+    }
     body.appendChild(text);
     if (options && (options.canPause || options.canResume || options.canHardStop)) {
       var controls = document.createElement("div");
@@ -4329,7 +4452,7 @@
         "Dang cap nhat nhan vien " + (i + 1) + "/" + employees.length +
         ": Ma " + item.employee_code +
         " | Tac vu: " + employeeUpdateTaskLabel(item.update_task),
-        { canPause: true, canHardStop: true }
+        { canPause: true, canHardStop: true, queue: queue }
       );
       var result = null;
       try {
@@ -4363,7 +4486,7 @@
       if (results.length) downloadEmployeeUpdateResults(results);
       await chromeStorageRemove(EMPLOYEE_BATCH_KEY);
       clearEmployeeQueueHash();
-      adminPanel("Da dung han automation cap nhat. Da xu ly: " + results.length + "/" + employees.length + ". Queue cu da duoc huy.", { status: "stopped" });
+      adminPanel("Da dung han automation cap nhat. Da xu ly: " + results.length + "/" + employees.length + ". Queue cu da duoc huy.", { status: "stopped", queue: queue });
       return;
     }
 
@@ -4383,7 +4506,8 @@
     adminPanel("Hoan tat cap nhat nhan vien. Thanh cong: " + okCount + ", Loi: " + errorCount + ". Da tai file ket qua.", {
       status: "done",
       canReport: errorCount > 0,
-      reportAttachment: errorCount > 0 ? updateResultAttachment : null
+      reportAttachment: errorCount > 0 ? updateResultAttachment : null,
+      queue: queue
     });
   }
 
@@ -4432,7 +4556,7 @@
         " | Ma: " + employee.employee_code +
         " | CV: " + (employee.position || "") + " -> " + (employee.position_form || "") +
         " | SDT: " + employee.phone,
-        { canPause: true, canHardStop: true }
+        { canPause: true, canHardStop: true, queue: queue }
       );
       var result = null;
       try {
@@ -4466,7 +4590,7 @@
       if (results.length) downloadEmployeeResults(results);
       await chromeStorageRemove(EMPLOYEE_BATCH_KEY);
       clearEmployeeQueueHash();
-      adminPanel("Da dung han automation. Da xu ly: " + results.length + "/" + employees.length + ". Queue cu da duoc huy.", { status: "stopped" });
+      adminPanel("Da dung han automation. Da xu ly: " + results.length + "/" + employees.length + ". Queue cu da duoc huy.", { status: "stopped", queue: queue });
       return;
     }
 
@@ -4486,7 +4610,8 @@
     adminPanel("Hoan tat tao nhan vien. Thanh cong: " + okCount + ", Loi: " + errorCount + ". Da tai file ket qua.", {
       status: "done",
       canReport: errorCount > 0,
-      reportAttachment: errorCount > 0 ? createResultAttachment : null
+      reportAttachment: errorCount > 0 ? createResultAttachment : null,
+      queue: queue
     });
   }
 
@@ -4500,7 +4625,8 @@
         adminPauseRequested = true;
         adminPanel("Automation dang tam dung. Bam Tiep tuc de chay tiep hoac Dung han de huy queue.", {
           canResume: true,
-          canHardStop: true
+          canHardStop: true,
+          queue: queue
         });
         return;
       }
@@ -4511,7 +4637,7 @@
         }
         return;
       }
-      adminPanel(queue.queue_type === EMPLOYEE_UPDATE_QUEUE_TYPE ? "Da nhan queue cap nhat nhan vien. Dang chuan bi..." : "Da nhan queue tao nhan vien. Dang chuan bi...", { canPause: true, canHardStop: true });
+      adminPanel(queue.queue_type === EMPLOYEE_UPDATE_QUEUE_TYPE ? "Da nhan queue cap nhat nhan vien. Dang chuan bi..." : "Da nhan queue tao nhan vien. Dang chuan bi...", { canPause: true, canHardStop: true, queue: queue });
       await sleep(1200);
       await runAdminEmployeeQueue(queue);
     } catch (err) {
@@ -4571,6 +4697,7 @@
     shouldStopEmployeeQueue: shouldStopEmployeeQueue,
     isEmployeeQueuePaused: isEmployeeQueuePaused,
     isEmployeeQueueRunnable: isEmployeeQueueRunnable,
+    buildEmployeeAutomationDashboardState: buildEmployeeAutomationDashboardState,
     employeeMissingFields: employeeMissingFields,
     employeeFormMismatches: employeeFormMismatches,
     employeeAlreadyVisibleInText: employeeAlreadyVisibleInText,
