@@ -109,11 +109,12 @@ try {
   Compress-Archive -Path (Join-Path $StageDir "*") -DestinationPath $ZipPath -Force
 
   $tag = "v$Version"
-  $releaseExists = $false
+  $oldErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
   & $GhPath release view $tag --repo $Repo *> $null
-  if ($LASTEXITCODE -eq 0) {
-    $releaseExists = $true
-  }
+  $releaseViewCode = $LASTEXITCODE
+  $ErrorActionPreference = $oldErrorActionPreference
+  $releaseExists = $releaseViewCode -eq 0
 
   if ($releaseExists) {
     & $GhPath release upload $tag $ZipPath --repo $Repo --clobber
