@@ -4979,6 +4979,7 @@
       if (!item) break;
       queue.current_index = i;
       var searchMode = normalizeEmployeeUpdateSearchMode(queue.search_mode || "active");
+      var taskType = normalizeEmployeeUpdateTaskType(item.update_task);
       var rowInfo = null;
       try {
         await waitForAdminRunControl();
@@ -4987,10 +4988,17 @@
           return;
         }
         await waitForAdminRunControl();
-        rowInfo = await waitFor(function() {
-          return findEmployeeRowInfoByCode(item.employee_code);
-        }, 8000, 300);
-        if (!rowInfo && searchMode === "active" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
+        var activeOutcome = await waitForEmployeeSearchOutcome(
+          item.employee_code,
+          EMPLOYEE_SEARCH_TIMEOUT_MS
+        );
+        rowInfo = activeOutcome.rowInfo;
+        if (
+          !rowInfo &&
+          searchMode === "active" &&
+          taskType === UPDATE_TASK_RESIGNATION &&
+          (activeOutcome.state === "empty" || activeOutcome.state === "timeout")
+        ) {
           queue.search_mode = "inactive";
           queue.admin_url = buildEmployeeUpdateSearchUrl(item, "inactive");
           await chromeStorageSet((function() {
@@ -5002,9 +5010,15 @@
           await waitForAdminRunControl();
           await ensureEmployeeUpdateSearchState(item, searchMode);
           await waitForAdminRunControl();
-          rowInfo = await waitFor(function() {
-            return findEmployeeRowInfoByCode(item.employee_code);
-          }, 8000, 300);
+          var inactiveOutcome = await waitForEmployeeSearchOutcome(
+            item.employee_code,
+            EMPLOYEE_SEARCH_TIMEOUT_MS
+          );
+          if (inactiveOutcome.state === "found") {
+            rowInfo = inactiveOutcome.rowInfo;
+          } else if (inactiveOutcome.state === "empty" || inactiveOutcome.state === "timeout") {
+            rowInfo = null;
+          }
         }
       } catch (searchErr) {
         if (isAdminControlError(searchErr)) {
@@ -5014,10 +5028,14 @@
         throw searchErr;
       }
       var notFoundResult = null;
-      if (!rowInfo && searchMode === "inactive" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
+      if (!rowInfo && searchMode === "inactive" && taskType === UPDATE_TASK_RESIGNATION) {
         notFoundResult = createEmployeeUpdateResultDefaults(normalizeEmployeeUpdateTask(item, item.update_task));
         notFoundResult.update_status = "Lỗi";
         notFoundResult.update_error = "Không tìm thấy nhân viên ở trạng thái đang hoạt động hoặc ngừng hoạt động.";
+      } else if (!rowInfo && taskType === UPDATE_TASK_MID_AUTUMN) {
+        notFoundResult = createEmployeeUpdateResultDefaults(normalizeEmployeeUpdateTask(item, item.update_task));
+        notFoundResult.update_status = "Lỗi";
+        notFoundResult.update_error = "Không tìm thấy nhân viên đang hoạt động.";
       }
 
       adminPanel(

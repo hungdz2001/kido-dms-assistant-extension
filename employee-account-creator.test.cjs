@@ -778,6 +778,15 @@ function assertNoMojibake(label, value) {
   assert.equal(updateQueueBody.includes("queue.stop_requested = false"), false);
   assert.equal(updateQueueBody.includes("queue.pause_requested = false"), false);
   assert.equal(updateQueueBody.includes("ensureEmployeeUpdateSearchState(item, searchMode)"), true);
+  assert.equal(updateQueueBody.includes("waitForEmployeeSearchOutcome("), true);
+  assert.equal(updateQueueBody.includes("item.employee_code"), true);
+  assert.equal(updateQueueBody.includes("}, 8000, 300)"), false);
+  assert.equal(updateQueueBody.includes('activeOutcome.state === "empty"'), true);
+  assert.equal(updateQueueBody.includes('activeOutcome.state === "timeout"'), true);
+  assert.equal(updateQueueBody.includes('queue.search_mode = "inactive"'), true);
+  assert.equal(updateQueueBody.includes('inactiveOutcome.state === "found"'), true);
+  assert.equal(updateQueueBody.includes('inactiveOutcome.state === "empty"'), true);
+  assert.equal(updateQueueBody.includes("UPDATE_TASK_MID_AUTUMN"), true);
   assert.ok(
     updateQueueBody.indexOf("await waitForAdminRunControl()") < updateQueueBody.indexOf("ensureEmployeeUpdateSearchState(item, searchMode)")
   );
