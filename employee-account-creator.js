@@ -4,7 +4,7 @@
   var WORKER_ORIGIN = "";
   var SEND_PATH = "";
   var FEEDBACK_WORKER_URL = "https://kdc-employee-support.chillwithdms.workers.dev/feedback";
-  var EXTENSION_VERSION = "1.2.8";
+  var EXTENSION_VERSION = "1.2.9";
   var STORAGE_KEY = "lmb_last_sent_signature_v1";
   var EMPLOYEE_BATCH_KEY = "lmb_employee_batch_v1";
   var EMPLOYEE_QUEUE_HASH_KEY = "lmb_employee_queue";
@@ -195,12 +195,16 @@
   }
 
   function normalizeEmployeeUpdateSearchMode(mode) {
-    return mode === "all" ? "all" : "active";
+    return mode === "inactive" ? "inactive" : "active";
+  }
+
+  function employeeUpdateSearchModeToStatus(mode) {
+    return normalizeEmployeeUpdateSearchMode(mode) === "inactive" ? "Ngừng hoạt động" : "Đang hoạt động";
   }
 
   function buildEmployeeUpdateSearchUrl(item, mode) {
     var searchMode = normalizeEmployeeUpdateSearchMode(mode);
-    return buildEmployeeSearchUrl(item && item.employee_code, searchMode !== "all");
+    return buildEmployeeSearchUrl(item && item.employee_code, searchMode !== "inactive");
   }
 
   function employeeAdminUrlForQueue(queue) {
@@ -3923,6 +3927,112 @@
     }
   }
 
+  function findEmployeeStatusFilter() {
+    if (typeof document === "undefined") return null;
+    var selectors = ".ant-select,.el-select,select,[role='combobox']";
+    var seen = [];
+    var candidates = Array.from(document.querySelectorAll(selectors)).map(function(node) {
+      return node.closest && node.closest(".ant-select,.el-select") || node;
+    }).filter(function(node) {
+      if (!node || seen.indexOf(node) >= 0 || !isVisible(node) || isOwnExtensionElement(node)) return false;
+      seen.push(node);
+      if (node.closest && node.closest("[role='dialog'],.ant-modal,.modal,.el-dialog")) return false;
+      return true;
+    });
+
+    var scored = candidates.map(function(select) {
+      var input = select.querySelector && select.querySelector("input");
+      var parent = select.parentElement;
+      var text = [
+        selectDisplayText(select),
+        select.getAttribute && select.getAttribute("placeholder") || "",
+        select.getAttribute && select.getAttribute("aria-label") || "",
+        select.getAttribute && select.getAttribute("title") || "",
+        input && input.getAttribute("placeholder") || "",
+        input && input.getAttribute("aria-label") || "",
+        parent ? visibleText(parent) : ""
+      ].join(" ");
+      var plain = stripAccents(text).toLowerCase();
+      var score = 0;
+      if (plain.indexOf("trang thai") >= 0) score += 100;
+      if (plain.indexOf("dang hoat dong") >= 0 || plain.indexOf("ngung hoat dong") >= 0) score += 80;
+      var rect = select.getBoundingClientRect();
+      if (rect.top >= 0 && rect.top < 320) score += 20;
+      return { select: select, score: score };
+    }).filter(function(item) {
+      return item.score >= 80;
+    }).sort(function(a, b) {
+      return b.score - a.score;
+    });
+
+    return scored.length ? scored[0].select : null;
+  }
+
+  function isEmployeeListLoading() {
+    if (typeof document === "undefined") return false;
+    return Array.from(document.querySelectorAll(
+      ".ant-spin-spinning,.ant-table-placeholder .ant-spin,.el-loading-mask,.el-icon-loading"
+    )).some(function(node) {
+      return isVisible(node) && !isOwnExtensionElement(node);
+    });
+  }
+
+  async function applyEmployeeListStatusFilter(mode) {
+    var optionText = employeeUpdateSearchModeToStatus(mode);
+    await waitForAdminRunControl();
+    var select = await waitFor(findEmployeeStatusFilter, 8000, 200);
+    if (!select) throw new Error("Không tìm thấy bộ lọc Trạng thái trên danh sách nhân viên.");
+    if (!selectedValueMatches(select, optionText)) {
+      if (select.tagName && select.tagName.toLowerCase() === "select") {
+        var nativeOption = Array.from(select.options).find(function(option) {
+          return optionTextMatches(option.text, optionText);
+        });
+        if (!nativeOption) throw new Error("Không tìm thấy lựa chọn " + optionText + " trong bộ lọc Trạng thái.");
+        select.value = nativeOption.value;
+        select.dispatchEvent(new Event("input", { bubbles: true }));
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      } else {
+        var activeTarget = document.activeElement;
+        if (visibleDropdownOptions().length && activeTarget) {
+          sendKey(activeTarget, "Escape");
+          await sleep(120);
+        }
+        await openDropdownForSelect(select);
+        var option = await waitFor(function() {
+          return findDropdownOptionByExactText(optionText);
+        }, 3500, 100);
+        if (option) {
+          commitDropdownOption(option);
+          await sleep(350);
+        }
+        if (!selectedValueMatches(select, optionText)) {
+          await searchAndCommitDropdownOption(select, optionText);
+        }
+        if (!selectedValueMatches(select, optionText)) {
+          await keyboardSelectDropdownOption(select, optionText);
+        }
+      }
+    }
+    if (!selectedValueMatches(select, optionText)) {
+      throw new Error("Chọn bộ lọc Trạng thái không thành công: đang là " + selectDisplayText(select) + ", cần " + optionText + ".");
+    }
+    await waitForAdminRunControl();
+    await sleep(250);
+    await waitFor(function() {
+      return !isEmployeeListLoading();
+    }, 10000, 150);
+    await sleep(250);
+    return true;
+  }
+
+  async function ensureEmployeeUpdateSearchState(item, mode) {
+    if (!isCurrentEmployeeUpdateSearchUrl(item, mode)) return false;
+    await waitForAdminRunControl();
+    await applyEmployeeListStatusFilter(mode);
+    await waitForAdminRunControl();
+    return true;
+  }
+
   function clickRadioText(text, modal) {
     var el = findClickableContainingText(text, modal);
     if (el) {
@@ -4686,17 +4796,15 @@
       var url = new URL(root.location.href);
       var wanted = cleanField(item && item.employee_code).toUpperCase();
       var keyword = cleanField(url.searchParams.get("keyword") || "").toUpperCase();
-      var status = cleanField(url.searchParams.get("status") || "").toUpperCase();
-      var searchMode = normalizeEmployeeUpdateSearchMode(mode);
       return /\/userManager\/list$/i.test(url.pathname) &&
-        keyword === wanted &&
-        (searchMode === "all" ? !status : status === "ACTIVE");
+        keyword === wanted;
     } catch (e) {
       return false;
     }
   }
 
   async function navigateToEmployeeUpdateItem(queue, item, mode) {
+    await waitForAdminRunControl();
     queue.search_mode = normalizeEmployeeUpdateSearchMode(mode);
     queue.admin_url = buildEmployeeUpdateSearchUrl(item, queue.search_mode);
     var targetUrl = queue.admin_url;
@@ -4709,6 +4817,7 @@
     } catch (storageErr) {
       targetUrl = buildAdminEmployeeQueueUrl(queue, queue.admin_url);
     }
+    await waitForAdminRunControl();
     root.location.href = targetUrl;
   }
 
@@ -4718,9 +4827,7 @@
     adminStopRequested = false;
     adminPauseRequested = false;
     adminPausePanelShown = false;
-    queue.status = "running";
-    queue.stop_requested = false;
-    queue.pause_requested = false;
+    if (!queue.status || queue.status === "pending") queue.status = "running";
     await chromeStorageSet((function() {
       var obj = {};
       obj[EMPLOYEE_BATCH_KEY] = queue;
@@ -4749,22 +4856,42 @@
       if (!item) break;
       queue.current_index = i;
       var searchMode = normalizeEmployeeUpdateSearchMode(queue.search_mode || "active");
-      if (!isCurrentEmployeeUpdateSearchUrl(item, searchMode)) {
-        await navigateToEmployeeUpdateItem(queue, item, searchMode);
-        return;
-      }
-
-      var rowInfo = await waitFor(function() {
-        return findEmployeeRowInfoByCode(item.employee_code);
-      }, 5000, 300);
-      if (!rowInfo && searchMode === "active" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
-        queue.search_mode = "all";
-        queue.admin_url = buildEmployeeUpdateSearchUrl(item, "all");
-        await navigateToEmployeeUpdateItem(queue, item, "all");
-        return;
+      var rowInfo = null;
+      try {
+        await waitForAdminRunControl();
+        if (!await ensureEmployeeUpdateSearchState(item, searchMode)) {
+          await navigateToEmployeeUpdateItem(queue, item, searchMode);
+          return;
+        }
+        await waitForAdminRunControl();
+        rowInfo = await waitFor(function() {
+          return findEmployeeRowInfoByCode(item.employee_code);
+        }, 8000, 300);
+        if (!rowInfo && searchMode === "active" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
+          queue.search_mode = "inactive";
+          queue.admin_url = buildEmployeeUpdateSearchUrl(item, "inactive");
+          await chromeStorageSet((function() {
+            var obj = {};
+            obj[EMPLOYEE_BATCH_KEY] = queue;
+            return obj;
+          })());
+          searchMode = "inactive";
+          await waitForAdminRunControl();
+          await ensureEmployeeUpdateSearchState(item, searchMode);
+          await waitForAdminRunControl();
+          rowInfo = await waitFor(function() {
+            return findEmployeeRowInfoByCode(item.employee_code);
+          }, 8000, 300);
+        }
+      } catch (searchErr) {
+        if (isAdminControlError(searchErr)) {
+          stopped = true;
+          break;
+        }
+        throw searchErr;
       }
       var notFoundResult = null;
-      if (!rowInfo && searchMode === "all" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
+      if (!rowInfo && searchMode === "inactive" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
         notFoundResult = createEmployeeUpdateResultDefaults(normalizeEmployeeUpdateTask(item, item.update_task));
         notFoundResult.update_status = "Lỗi";
         notFoundResult.update_error = "Không tìm thấy nhân viên ở trạng thái đang hoạt động hoặc ngừng hoạt động.";
@@ -5008,6 +5135,7 @@
     applyEmployeeCategoryChoice: applyEmployeeCategoryChoice,
     buildEmployeeSearchUrl: buildEmployeeSearchUrl,
     buildEmployeeUpdateSearchUrl: buildEmployeeUpdateSearchUrl,
+    employeeUpdateSearchModeToStatus: employeeUpdateSearchModeToStatus,
     buildAdminEmployeeQueueUrl: buildAdminEmployeeQueueUrl,
     buildSupportFeedbackPayload: buildSupportFeedbackPayload,
     formatSupportLogLine: formatSupportLogLine,

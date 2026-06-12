@@ -1,6 +1,6 @@
 "use strict";
 
-var WORKER_VERSION = "1.2.8";
+var WORKER_VERSION = "1.2.9";
 var MAX_MESSAGE_LENGTH = 5000;
 var MAX_FIELD_LENGTH = 1000;
 var MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
@@ -8,8 +8,8 @@ var MAX_PAYLOAD_LENGTH = 5 * 1024 * 1024;
 var TICKET_TTL_SECONDS = 14 * 24 * 60 * 60;
 var RATE_WINDOW_MS = 60 * 1000;
 var RATE_LIMIT = 8;
-var EXTENSION_LATEST_VERSION = "1.2.8";
-var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.8";
+var EXTENSION_LATEST_VERSION = "1.2.9";
+var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.9";
 var EXTENSION_DOWNLOAD_PATH = "/extension-download";
 var GITHUB_RELEASE_REPO = "hungdz2001/kido-dms-assistant-extension";
 var GITHUB_RELEASE_TAG = "v" + EXTENSION_LATEST_VERSION;
@@ -364,9 +364,9 @@ function extensionUpdateInfo(request) {
     changelog_url: githubReleaseUrl("tag/" + GITHUB_RELEASE_TAG),
     release_title: "DMS Assistant " + EXTENSION_LATEST_VERSION,
     release_notes: [
-      "Cải tiến tác vụ đóng nhân viên nghỉ việc: nếu không thấy ở trạng thái đang hoạt động, hệ thống tự kiểm tra lại toàn bộ trạng thái.",
-      "Nhân viên đã ngừng hoạt động từ trước được tính là thành công và ghi chú rõ trong file kết quả.",
-      "File kết quả cập nhật đổi cột ghi chú để dùng được cho cả lỗi và thông tin bổ sung."
+      "Tự chọn bộ lọc Trạng thái khi kiểm tra nhân viên đã nghỉ việc.",
+      "Sửa nút Tạm dừng và Dừng hẳn không bị mất trạng thái khi trang tải lại.",
+      "Giảm tải lại trang lặp lại trong luồng cập nhật hồ sơ."
     ],
     updated_at: "2026-06-12T00:00:00.000Z"
   };
