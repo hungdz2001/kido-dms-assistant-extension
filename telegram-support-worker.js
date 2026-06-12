@@ -1,6 +1,6 @@
 "use strict";
 
-var WORKER_VERSION = "1.2.6";
+var WORKER_VERSION = "1.2.7";
 var MAX_MESSAGE_LENGTH = 5000;
 var MAX_FIELD_LENGTH = 1000;
 var MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
@@ -8,8 +8,8 @@ var MAX_PAYLOAD_LENGTH = 5 * 1024 * 1024;
 var TICKET_TTL_SECONDS = 14 * 24 * 60 * 60;
 var RATE_WINDOW_MS = 60 * 1000;
 var RATE_LIMIT = 8;
-var EXTENSION_LATEST_VERSION = "1.2.6";
-var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.6";
+var EXTENSION_LATEST_VERSION = "1.2.7";
+var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.7";
 var EXTENSION_DOWNLOAD_PATH = "/extension-download";
 var GITHUB_RELEASE_REPO = "hungdz2001/kido-dms-assistant-extension";
 var GITHUB_RELEASE_TAG = "v" + EXTENSION_LATEST_VERSION;
@@ -364,10 +364,9 @@ function extensionUpdateInfo(request) {
     changelog_url: githubReleaseUrl("tag/" + GITHUB_RELEASE_TAG),
     release_title: "DMS Assistant " + EXTENSION_LATEST_VERSION,
     release_notes: [
-      "Thêm nút thu nhỏ DMS Assistant thành robot nhỏ kéo thả được.",
-      "Thêm nút tắt nhanh để ẩn toàn bộ UI, bật lại bằng icon extension trên Chrome.",
-      "Đổi logo header sang robot CSS gọn hơn, đồng bộ với bubble thu nhỏ.",
-      "Đổi footer thành Phát triển bởi HƯNG ĐẸP TRAI và giảm độ nổi để giao diện tinh tế hơn."
+      "Đổi logo header và bubble thu nhỏ sang icon kido-helper chính thức để đồng bộ với extension.",
+      "Bỏ robot CSS tự dựng trong panel, dùng asset PNG có sẵn trong bộ icon.",
+      "Khai báo icon trong web_accessible_resources để content script hiển thị ổn định trên DMS."
     ],
     updated_at: "2026-06-12T00:00:00.000Z"
   };
