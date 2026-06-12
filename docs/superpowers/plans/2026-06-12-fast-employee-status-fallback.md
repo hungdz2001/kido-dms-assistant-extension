@@ -149,7 +149,8 @@ assert.equal(source.includes("function observeEmployeeSearchOutcome"), true);
 const observerBody = source.match(
   /async function observeEmployeeSearchOutcome[\s\S]+?async function waitForEmployeeSearchOutcome/
 )[0];
-assert.equal(observerBody.includes("new MutationObserver"), true);
+assert.equal(observerBody.includes("root.MutationObserver"), true);
+assert.equal(observerBody.includes("new Observer"), true);
 assert.equal(observerBody.includes("observer.disconnect()"), true);
 assert.equal(observerBody.includes("employeeSearchControlState"), true);
 assert.equal(observerBody.includes("EMPLOYEE_SEARCH_TIMEOUT_MS"), true);

@@ -638,6 +638,22 @@ function assertNoMojibake(label, value) {
   assert.equal(bridge.isEmployeeQueueRunnable({ status: "done", employees: [{}] }), false);
   assert.equal(bridge.isEmployeeQueueRunnable({ stop_requested: true, employees: [{}] }), false);
   assert.equal(bridge.isEmployeeQueueRunnable({ status: "running", employees: [] }), false);
+  assert.equal(typeof bridge.employeeSearchControlState, "function");
+  assert.equal(bridge.employeeSearchControlState({ status: "running" }), "run");
+  assert.equal(bridge.employeeSearchControlState({ status: "paused" }), "pause");
+  assert.equal(bridge.employeeSearchControlState({ pause_requested: true }), "pause");
+  assert.equal(bridge.employeeSearchControlState({ status: "cancelled" }), "stop");
+  assert.equal(bridge.employeeSearchControlState({ stop_requested: true }), "stop");
+  assert.equal(bridge.employeeSearchControlState(null), "stop");
+  assert.equal(source.includes("function observeEmployeeSearchOutcome"), true);
+  const observerBody = source.match(
+    /async function observeEmployeeSearchOutcome[\s\S]+?async function waitForEmployeeSearchOutcome/
+  )[0];
+  assert.equal(observerBody.includes("root.MutationObserver"), true);
+  assert.equal(observerBody.includes("new Observer"), true);
+  assert.equal(observerBody.includes("observer.disconnect()"), true);
+  assert.equal(observerBody.includes("employeeSearchControlState"), true);
+  assert.equal(observerBody.includes("EMPLOYEE_SEARCH_TIMEOUT_MS"), true);
 
   const requestStopBody = source.match(/async function requestAdminStop[\s\S]+?function adminPanel/)[0];
   assert.equal(requestStopBody.includes("chromeStorageRemove(EMPLOYEE_BATCH_KEY)"), true);

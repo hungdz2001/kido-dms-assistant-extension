@@ -28,6 +28,9 @@
   var UPDATE_TASK_RESIGNATION = "resignation";
   var UPDATE_TASK_MID_AUTUMN = "add_mid_autumn";
   var MID_AUTUMN_CATEGORY = "Trung thu";
+  var EMPLOYEE_SEARCH_TIMEOUT_MS = 3000;
+  var EMPLOYEE_SEARCH_CONTROL_POLL_MS = 150;
+  var EMPLOYEE_SEARCH_EMPTY_STABLE_MS = 120;
   var DUPLICATE_EMPLOYEE_ERROR = "Mã nhân viên hoặc số điện thoại đã tồn tại.";
   var EXTENSION_TITLE = "AUTO TẠO TÀI KHOẢN NHÂN VIÊN";
   var EXTENSION_AUTHOR = "HƯNG ĐẸP TRAI";
@@ -731,6 +734,12 @@
 
   function isEmployeeQueuePaused(queue) {
     return !!(queue && (queue.pause_requested || queue.status === "paused"));
+  }
+
+  function employeeSearchControlState(queue) {
+    if (!queue || shouldStopEmployeeQueue(queue)) return "stop";
+    if (isEmployeeQueuePaused(queue)) return "pause";
+    return "run";
   }
 
   function isEmployeeQueueRunnable(queue) {
@@ -4069,6 +4078,84 @@
     return true;
   }
 
+  async function observeEmployeeSearchOutcome(employeeCode, timeoutMs) {
+    var container = findEmployeeTableContainer();
+    var timeout = Math.max(Number(timeoutMs) || EMPLOYEE_SEARCH_TIMEOUT_MS, 500);
+    var started = Date.now();
+    var dirty = true;
+    var Observer = root.MutationObserver ||
+      (typeof MutationObserver !== "undefined" ? MutationObserver : null);
+    var observer = null;
+
+    function connectObserver() {
+      if (observer || !Observer || !container) return;
+      observer = new Observer(function() {
+        dirty = true;
+      });
+      observer.observe(container, {
+        childList: true,
+        subtree: true,
+        attributes: true
+      });
+    }
+
+    connectObserver();
+
+    try {
+      while (Date.now() - started < timeout) {
+        var queue = await readAdminControlQueue();
+        var control = employeeSearchControlState(queue);
+        if (control === "stop") {
+          throw createAdminControlError("Da dung han automation.", "cancelled");
+        }
+        if (control === "pause") {
+          return { state: "paused", rowInfo: null };
+        }
+
+        if (!container) {
+          container = findEmployeeTableContainer();
+          if (container) {
+            dirty = true;
+            connectObserver();
+          }
+        }
+
+        if (dirty || !observer) {
+          dirty = false;
+          var rowInfo = findEmployeeRowInfoByCode(employeeCode);
+          var state = classifyEmployeeSearchSnapshot({
+            rowInfo: rowInfo,
+            loading: isEmployeeListLoading(),
+            empty: isEmployeeTableEmpty(container)
+          });
+          if (state === "found") {
+            return { state: state, rowInfo: rowInfo };
+          }
+          if (state === "empty") {
+            await rawSleep(EMPLOYEE_SEARCH_EMPTY_STABLE_MS);
+            var stableRow = findEmployeeRowInfoByCode(employeeCode);
+            if (!stableRow && !isEmployeeListLoading() && isEmployeeTableEmpty(container)) {
+              return { state: "empty", rowInfo: null };
+            }
+            dirty = true;
+          }
+        }
+        await rawSleep(EMPLOYEE_SEARCH_CONTROL_POLL_MS);
+      }
+      return { state: "timeout", rowInfo: null };
+    } finally {
+      if (observer) observer.disconnect();
+    }
+  }
+
+  async function waitForEmployeeSearchOutcome(employeeCode, timeoutMs) {
+    while (true) {
+      var outcome = await observeEmployeeSearchOutcome(employeeCode, timeoutMs);
+      if (outcome.state !== "paused") return outcome;
+      await waitForAdminRunControl();
+    }
+  }
+
   function clickRadioText(text, modal) {
     var el = findClickableContainingText(text, modal);
     if (el) {
@@ -5189,6 +5276,7 @@
     employeeAtQueueIndex: employeeAtQueueIndex,
     shouldStopEmployeeQueue: shouldStopEmployeeQueue,
     isEmployeeQueuePaused: isEmployeeQueuePaused,
+    employeeSearchControlState: employeeSearchControlState,
     isEmployeeQueueRunnable: isEmployeeQueueRunnable,
     buildEmployeeAutomationDashboardState: buildEmployeeAutomationDashboardState,
     employeeMissingFields: employeeMissingFields,
