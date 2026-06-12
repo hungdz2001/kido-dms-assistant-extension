@@ -1,6 +1,6 @@
 "use strict";
 
-var WORKER_VERSION = "1.2.2";
+var WORKER_VERSION = "1.2.3";
 var MAX_MESSAGE_LENGTH = 5000;
 var MAX_FIELD_LENGTH = 1000;
 var MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024;
@@ -8,8 +8,8 @@ var MAX_PAYLOAD_LENGTH = 5 * 1024 * 1024;
 var TICKET_TTL_SECONDS = 14 * 24 * 60 * 60;
 var RATE_WINDOW_MS = 60 * 1000;
 var RATE_LIMIT = 8;
-var EXTENSION_LATEST_VERSION = "1.2.2";
-var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.2";
+var EXTENSION_LATEST_VERSION = "1.2.3";
+var EXTENSION_MIN_SUPPORTED_VERSION = "1.2.3";
 var EXTENSION_DOWNLOAD_PATH = "/extension-download";
 var GITHUB_RELEASE_REPO = "hungdz2001/kido-dms-assistant-extension";
 var GITHUB_RELEASE_TAG = "v" + EXTENSION_LATEST_VERSION;
@@ -364,12 +364,12 @@ function extensionUpdateInfo(request) {
     changelog_url: githubReleaseUrl("tag/" + GITHUB_RELEASE_TAG),
     release_title: "DMS Assistant " + EXTENSION_LATEST_VERSION,
     release_notes: [
-      "Nâng cấp dashboard chạy automation ở góc trái: rộng hơn, dễ theo dõi hơn.",
-      "Bổ sung thanh tiến độ, số dòng đã xử lý và chỉ số Thành công/Lỗi/Còn lại.",
-      "Hiển thị hồ sơ đang xử lý và lỗi gần nhất ngay trong panel chạy.",
-      "Giữ nguyên các nút Tạm dừng/Tiếp tục/Dừng hẳn/Gửi báo cáo lỗi."
+      "Sửa lỗi nhân viên đã tồn tại nhưng vẫn bị tính là tạo thành công.",
+      "Mã nhân viên hoặc số điện thoại đã tồn tại sẽ được ghi là Lỗi trong file kết quả.",
+      "Dashboard tiến độ và báo cáo lỗi phản ánh đúng số Thành công/Lỗi.",
+      "Bổ sung nhận diện lỗi trùng từ thông báo của DMS ngoài form."
     ],
-    updated_at: "2026-06-11T00:00:00.000Z"
+    updated_at: "2026-06-12T00:00:00.000Z"
   };
 }
 

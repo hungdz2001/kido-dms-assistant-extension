@@ -4,7 +4,7 @@
   var WORKER_ORIGIN = "";
   var SEND_PATH = "";
   var FEEDBACK_WORKER_URL = "https://kdc-employee-support.chillwithdms.workers.dev/feedback";
-  var EXTENSION_VERSION = "1.2.2";
+  var EXTENSION_VERSION = "1.2.3";
   var STORAGE_KEY = "lmb_last_sent_signature_v1";
   var EMPLOYEE_BATCH_KEY = "lmb_employee_batch_v1";
   var EMPLOYEE_QUEUE_HASH_KEY = "lmb_employee_queue";
@@ -26,6 +26,7 @@
   var UPDATE_TASK_RESIGNATION = "resignation";
   var UPDATE_TASK_MID_AUTUMN = "add_mid_autumn";
   var MID_AUTUMN_CATEGORY = "Trung thu";
+  var DUPLICATE_EMPLOYEE_ERROR = "Mã nhân viên hoặc số điện thoại đã tồn tại.";
   var EXTENSION_TITLE = "AUTO TẠO TÀI KHOẢN NHÂN VIÊN";
   var EXTENSION_AUTHOR = "HƯNG ĐẸP TRAI";
   var SUPPORT_ATTACHMENT_MAX_BYTES = 3 * 1024 * 1024;
@@ -666,7 +667,7 @@
 
   function isSuccessfulEmployeeResult(item) {
     var status = stripAccents(item && item.create_status).toLowerCase();
-    return status === "thanh cong" || status === "da ton tai";
+    return status === "thanh cong";
   }
 
   function isSuccessfulEmployeeUpdateResult(item) {
@@ -3931,18 +3932,58 @@
 
   function readEmployeeSubmitError(modal) {
     var text = visibleText(modal);
-    if (isDuplicateEmployeeSubmitError(text)) return "Ma nhan vien hoac so dien thoai da ton tai.";
+    if (isDuplicateEmployeeSubmitError(text)) return DUPLICATE_EMPLOYEE_ERROR;
     return "";
   }
 
-  async function waitForEmployeeSubmitOutcome(modal, employee, timeoutMs) {
+  function isEmployeeExtensionUiNode(node) {
+    return !!(node && node.closest && node.closest(
+      "#lmb_toast,#lmb_confirm,#lmb_employee_review,#lmb_admin_panel,#lmb_control_center,.lmb-fab"
+    ));
+  }
+
+  function findGlobalEmployeeSubmitErrorNodes() {
+    if (typeof document === "undefined" || !document.querySelectorAll) return [];
+    var selectors = [
+      ".ant-message-notice",
+      ".ant-message-notice-content",
+      ".ant-notification-notice",
+      ".ant-notification-notice-message",
+      ".ant-notification-notice-description",
+      ".el-message",
+      ".el-message__content",
+      ".el-notification",
+      ".el-notification__content",
+      ".toast",
+      ".notification",
+      "[role='alert']"
+    ];
+    return Array.from(document.querySelectorAll(selectors.join(","))).filter(function(node) {
+      return isVisible(node) && !isEmployeeExtensionUiNode(node) && readEmployeeSubmitError(node);
+    });
+  }
+
+  function findGlobalEmployeeSubmitError(ignoredNodes) {
+    var ignored = Array.isArray(ignoredNodes) ? ignoredNodes : [];
+    var nodes = findGlobalEmployeeSubmitErrorNodes();
+    for (var i = 0; i < nodes.length; i++) {
+      if (ignored.indexOf(nodes[i]) >= 0) continue;
+      var error = readEmployeeSubmitError(nodes[i]);
+      if (error) return error;
+    }
+    return "";
+  }
+
+  async function waitForEmployeeSubmitOutcome(modal, employee, timeoutMs, ignoredGlobalErrorNodes) {
     return await waitFor(function() {
       var modalOpen = isModalStillOpen(modal) && findEmployeeModal();
       if (modalOpen) {
-        var error = readEmployeeSubmitError(modal);
+        var error = readEmployeeSubmitError(modal) || findGlobalEmployeeSubmitError(ignoredGlobalErrorNodes);
         if (error) return { modal_closed: false, row_visible: false, error: error };
         return null;
       }
+      var globalError = findGlobalEmployeeSubmitError(ignoredGlobalErrorNodes);
+      if (globalError) return { modal_closed: true, row_visible: false, error: globalError };
       if (employeeAlreadyVisibleOnCurrentPage(employee)) {
         return { modal_closed: true, row_visible: true, error: "" };
       }
@@ -3976,8 +4017,9 @@
       var createBtn = findClickableByExactText("Tao moi", modal) || findClickableContainingText("Tao moi", modal);
       if (!createBtn) throw new Error("Khong tim thay nut Tao moi.");
       await waitForAdminRunControl();
+      var ignoredGlobalErrorNodes = findGlobalEmployeeSubmitErrorNodes();
       var createClicked = clickElement(createBtn);
-      var outcome = await waitForEmployeeSubmitOutcome(modal, employee, 15000);
+      var outcome = await waitForEmployeeSubmitOutcome(modal, employee, 15000, ignoredGlobalErrorNodes);
       if (outcome && outcome.error) throw new Error(outcome.error);
       var modalClosed = !!(outcome && outcome.modal_closed);
       var rowVisible = !!(outcome && outcome.row_visible);
@@ -3989,8 +4031,8 @@
     } catch (err) {
       if (isAdminControlError(err)) throw err;
       if (isDuplicateEmployeeSubmitError(err.message)) {
-        result.create_status = "Da ton tai";
-        result.create_error = "";
+        result.create_status = "Lỗi";
+        result.create_error = DUPLICATE_EMPLOYEE_ERROR;
         return result;
       }
       result.create_status = "Lỗi";

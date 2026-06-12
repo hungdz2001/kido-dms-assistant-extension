@@ -18,7 +18,7 @@ function assertNoMojibake(label, value) {
 
 {
   assert.equal(bridge.EXTENSION_AUTHOR, "HƯNG ĐẸP TRAI");
-  assert.equal(manifest.version, "1.2.2");
+  assert.equal(manifest.version, "1.2.3");
   assert.equal(bridge.EXTENSION_VERSION, manifest.version);
   assert.match(bridge.buildUiFooterHtml(), /HƯNG ĐẸP TRAI/);
   assert.equal(bridge.TOOLBAR_VISIBLE_KEY, "lmb_toolbar_visible_v1");
@@ -95,19 +95,19 @@ function assertNoMojibake(label, value) {
   assert.equal(bridge.shouldShowExtensionUpdate({ latest_version: "1.1.0" }, "1.1.0"), false);
   assert.equal(typeof bridge.isExtensionUpdateRequired, "function");
   assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.0" }, "1.1.0"), true);
-  assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.2" }, "1.2.2"), false);
+  assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.3" }, "1.2.3"), false);
   assert.equal(typeof bridge.isExtensionAutomationLocked, "function");
   assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.0" }, "1.1.0"), true);
-  assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.2" }, "1.2.2"), false);
+  assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.3" }, "1.2.3"), false);
   assert.equal(typeof bridge.buildRequiredUpdateTestInfo, "function");
   const forcedUpdateInfo = bridge.buildRequiredUpdateTestInfo({
-    latest_version: "1.2.2",
-    min_supported_version: "1.2.2",
+    latest_version: "1.2.3",
+    min_supported_version: "1.2.3",
     release_notes: ["Bản production"]
-  }, "1.2.2");
-  assert.equal(forcedUpdateInfo.latest_version, "1.2.3");
-  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.3");
-  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.2"), true);
+  }, "1.2.3");
+  assert.equal(forcedUpdateInfo.latest_version, "1.2.4");
+  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.4");
+  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.3"), true);
   assert.equal(forcedUpdateInfo.release_notes[0], "Chế độ kiểm thử bắt buộc cập nhật trên máy hiện tại.");
   assert.equal(source.includes("UPDATE_REQUIRED_TEST_KEY"), true);
   assert.equal(source.includes("applyRequiredUpdateTestMode"), true);
@@ -252,7 +252,7 @@ function assertNoMojibake(label, value) {
     command: "can them nut bao loi nhanh"
   });
   assert.equal(payload.source, "employee-extension");
-  assert.equal(payload.version, "1.2.2");
+  assert.equal(payload.version, "1.2.3");
   assert.equal(payload.type, "feature");
   assert.equal(payload.urgency, "high");
   assert.equal(payload.sender, "Admin NPP");
@@ -383,13 +383,13 @@ function assertNoMojibake(label, value) {
   assert.equal(typeof supportWorker.ticketStatusLabel, "function");
   assert.equal(typeof supportWorker.validateFeedbackPayload, "function");
   assert.equal(typeof supportWorker.formatTelegramMessage, "function");
-  assert.equal(supportWorker.WORKER_VERSION, "1.2.2");
+  assert.equal(supportWorker.WORKER_VERSION, "1.2.3");
   assert.equal(typeof supportWorker.extensionUpdateInfo, "function");
   const extensionInfo = supportWorker.extensionUpdateInfo();
-  assert.equal(extensionInfo.latest_version, "1.2.2");
-  assert.equal(extensionInfo.min_supported_version, "1.2.2");
-  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.2\/dms-assistant-extension-v1\.2\.2\.zip$/);
-  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.2$/);
+  assert.equal(extensionInfo.latest_version, "1.2.3");
+  assert.equal(extensionInfo.min_supported_version, "1.2.3");
+  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.3\/dms-assistant-extension-v1\.2\.3\.zip$/);
+  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.3$/);
   assert.equal(workerSource.includes("GITHUB_RELEASE_REPO"), true);
   assert.equal(Array.isArray(extensionInfo.release_notes), true);
   assert.match(workerSource, /\/extension-version/);
@@ -547,21 +547,57 @@ function assertNoMojibake(label, value) {
     results: [
       { employee_code: "TEST001", full_name: "Nhân viên 1", create_status: "Thành công" },
       { employee_code: "TEST002", full_name: "Nhân viên 2", create_status: "Lỗi", create_error: "Không đọc được mật khẩu" },
-      { employee_code: "TEST003", full_name: "Nhân viên 3", create_status: "Đã tồn tại" }
+      { employee_code: "TEST003", full_name: "Nhân viên 3", create_status: "Lỗi", create_error: "Mã nhân viên hoặc số điện thoại đã tồn tại." }
     ]
   }, "Đang tạo nhân viên", { canPause: true });
   assert.equal(createDashboard.total, 10);
   assert.equal(createDashboard.processed, 3);
   assert.equal(createDashboard.remaining, 7);
-  assert.equal(createDashboard.successCount, 2);
-  assert.equal(createDashboard.errorCount, 1);
+  assert.equal(createDashboard.successCount, 1);
+  assert.equal(createDashboard.errorCount, 2);
   assert.equal(createDashboard.progressPercent, 30);
   assert.equal(createDashboard.statusLabel, "Đang chạy");
   assert.equal(createDashboard.currentItem.primary, "TEST004");
   assert.match(createDashboard.currentItem.secondary, /Nhân viên 4/);
   assert.match(createDashboard.currentItem.meta, /NVBH/);
-  assert.equal(createDashboard.latestError.employee_code, "TEST002");
-  assert.match(createDashboard.latestError.message, /Không đọc được mật khẩu/);
+  assert.equal(createDashboard.latestError.employee_code, "TEST003");
+  assert.match(createDashboard.latestError.message, /Mã nhân viên hoặc số điện thoại đã tồn tại/);
+  const duplicateDashboard = bridge.buildEmployeeAutomationDashboardState({
+    queue_type: "employee_create",
+    status: "done",
+    current_index: 3,
+    employees: [
+      { employee_code: "TEST001", full_name: "Nhân viên 1" },
+      { employee_code: "TEST002", full_name: "Nhân viên 2" },
+      { employee_code: "TEST003", full_name: "Nhân viên 3" }
+    ],
+    results: [
+      { employee_code: "TEST001", full_name: "Nhân viên 1", create_status: "Thành công" },
+      { employee_code: "TEST002", full_name: "Nhân viên 2", create_status: "Lỗi", create_error: "Mã nhân viên hoặc số điện thoại đã tồn tại." },
+      { employee_code: "TEST003", full_name: "Nhân viên 3", create_status: "Lỗi", create_error: "Không đọc được mật khẩu" }
+    ]
+  }, "Hoàn tất phiên chạy", {});
+  assert.equal(duplicateDashboard.successCount, 1);
+  assert.equal(duplicateDashboard.errorCount, 2);
+  assert.equal(duplicateDashboard.latestError.employee_code, "TEST003");
+  assert.match(duplicateDashboard.latestError.message, /Không đọc được mật khẩu/);
+  const duplicateLatestDashboard = bridge.buildEmployeeAutomationDashboardState({
+    queue_type: "employee_create",
+    status: "done",
+    current_index: 2,
+    employees: [
+      { employee_code: "TEST001", full_name: "Nhân viên 1" },
+      { employee_code: "TEST002", full_name: "Nhân viên 2" }
+    ],
+    results: [
+      { employee_code: "TEST001", full_name: "Nhân viên 1", create_status: "Thành công" },
+      { employee_code: "TEST002", full_name: "Nhân viên 2", create_status: "Lỗi", create_error: "Mã nhân viên hoặc số điện thoại đã tồn tại." }
+    ]
+  }, "Hoàn tất phiên chạy", {});
+  assert.equal(duplicateLatestDashboard.successCount, 1);
+  assert.equal(duplicateLatestDashboard.errorCount, 1);
+  assert.equal(duplicateLatestDashboard.latestError.employee_code, "TEST002");
+  assert.match(duplicateLatestDashboard.latestError.message, /Mã nhân viên hoặc số điện thoại đã tồn tại/);
   const updateDashboard = bridge.buildEmployeeAutomationDashboardState({
     queue_type: "employee_update",
     status: "running",
@@ -677,9 +713,15 @@ function assertNoMojibake(label, value) {
 
 {
   assert.equal(bridge.isSuccessfulEmployeeResult({ create_status: "Thành công" }), true);
-  assert.equal(bridge.isSuccessfulEmployeeResult({ create_status: "Da ton tai" }), true);
-  assert.equal(bridge.isSuccessfulEmployeeResult({ create_status: "Đã tồn tại" }), true);
+  assert.equal(bridge.isSuccessfulEmployeeResult({ create_status: "Da ton tai" }), false);
+  assert.equal(bridge.isSuccessfulEmployeeResult({ create_status: "Đã tồn tại" }), false);
   assert.equal(bridge.isSuccessfulEmployeeResult({ create_status: "Lỗi" }), false);
+  assert.equal(source.includes('result.create_status = "Da ton tai";'), false);
+  assert.equal(source.includes('var DUPLICATE_EMPLOYEE_ERROR = "Mã nhân viên hoặc số điện thoại đã tồn tại.";'), true);
+  assert.equal(source.includes('result.create_error = DUPLICATE_EMPLOYEE_ERROR;'), true);
+  assert.equal(source.includes('findGlobalEmployeeSubmitError'), true);
+  assert.equal(source.includes('findGlobalEmployeeSubmitErrorNodes()'), true);
+  assert.equal(source.includes('ignoredGlobalErrorNodes'), true);
 
   const result = bridge.createEmployeeResultDefaults({
     employee_code: "TEST6868_5",
@@ -688,6 +730,13 @@ function assertNoMojibake(label, value) {
   assert.equal(result.generated_username, "TEST6868_5");
   assert.equal(result.generated_password, "Datchitieu@2025");
   assert.equal(result.create_error, "");
+  const duplicateWorkbook = bridge.buildEmployeeResultWorkbook([{
+    employee_code: "TEST6868_6",
+    full_name: "Nguyễn Văn A",
+    create_status: "Lỗi",
+    create_error: "Mã nhân viên hoặc số điện thoại đã tồn tại."
+  }]);
+  assert.match(duplicateWorkbook, /Mã nhân viên hoặc số điện thoại đã tồn tại\./);
 }
 
 {
@@ -1102,7 +1151,7 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const optionsJson = await optionsRes.json();
     assert.equal(optionsJson.ok, true);
-    assert.equal(optionsJson.worker_version, "1.2.2");
+    assert.equal(optionsJson.worker_version, "1.2.3");
     assert.equal(optionsJson.capabilities.attachments, true);
     assert.equal(optionsJson.capabilities.telegram_actions, true);
     assert.equal(optionsJson.capabilities.ticket_sync, true);
@@ -1118,9 +1167,9 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const versionJson = await versionRes.json();
     assert.equal(versionJson.ok, true);
-    assert.equal(versionJson.latest_version, "1.2.2");
-    assert.equal(versionJson.min_supported_version, "1.2.2");
-    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.2\/dms-assistant-extension-v1\.2\.2\.zip/);
+    assert.equal(versionJson.latest_version, "1.2.3");
+    assert.equal(versionJson.min_supported_version, "1.2.3");
+    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.3\/dms-assistant-extension-v1\.2\.3\.zip/);
 
     const callsWithoutAttachment = [];
     global.fetch = async function(url, options) {
@@ -1175,7 +1224,7 @@ async function runAsyncTests() {
     assert.equal(jsonWithAttachment.ok, true);
     assert.equal(jsonWithAttachment.attachment_received, true);
     assert.equal(jsonWithAttachment.attachment_sent, true);
-    assert.equal(jsonWithAttachment.worker_version, "1.2.2");
+    assert.equal(jsonWithAttachment.worker_version, "1.2.3");
     assert.equal(callsWithAttachment.length, 2);
     assert.match(callsWithAttachment[0].url, /sendMessage/);
     assert.match(callsWithAttachment[1].url, /sendDocument/);
