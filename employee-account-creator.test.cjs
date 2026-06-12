@@ -18,7 +18,7 @@ function assertNoMojibake(label, value) {
 
 {
   assert.equal(bridge.EXTENSION_AUTHOR, "HƯNG ĐẸP TRAI");
-  assert.equal(manifest.version, "1.2.4");
+  assert.equal(manifest.version, "1.2.5");
   assert.equal(bridge.EXTENSION_VERSION, manifest.version);
   assert.match(bridge.buildUiFooterHtml(), /HƯNG ĐẸP TRAI/);
   assert.equal(bridge.TOOLBAR_VISIBLE_KEY, "lmb_toolbar_visible_v1");
@@ -63,10 +63,11 @@ function assertNoMojibake(label, value) {
   const styleBody = source.match(/function ensureUiStyles[\s\S]+?function setFabLabel/)[0];
   const styleBodyWithoutFontVar = styleBody.replace(/--lmb-font:[^;]+;/g, "");
   assert.deepEqual(styleBodyWithoutFontVar.match(/font:[^";]*Arial,sans-serif/g) || [], []);
-  ["--lmb-bg", "--lmb-surface", "--lmb-blue", "--lmb-success", "--lmb-danger"].forEach((token) => {
-    assert.equal(styleBody.includes(token), true, `missing light dashboard token ${token}`);
+  ["--lmb-shell", "--lmb-body", "--lmb-surface", "--lmb-blue"].forEach((token) => {
+    assert.equal(styleBody.includes(token), true, `missing hybrid pro token ${token}`);
   });
-  assert.equal(styleBody.includes("--lmb-bg:#f3f6fa"), true);
+  assert.equal(styleBody.includes("--lmb-shell:#102033"), true);
+  assert.equal(styleBody.includes("--lmb-body:#eef4fb"), true);
   assert.equal(styleBody.includes("--lmb-surface:#ffffff"), true);
   assert.equal(styleBody.includes("--lmb-blue:#1e88ff"), true);
   assert.equal(styleBody.includes("--lmb-success:#16a34a"), true);
@@ -74,17 +75,22 @@ function assertNoMojibake(label, value) {
   assert.equal(styleBody.includes("#lmb_control_center{position:fixed;right:18px;bottom:20px;z-index:2147483647;width:min(420px"), true);
   assert.equal(styleBody.includes("#lmb_control_center{position:fixed;right:18px;bottom:20px;z-index:2147483647;width:min(390px"), false);
   assert.equal(styleBody.includes("#lmb_control_center{position:fixed;right:18px;bottom:20px;z-index:2147483647;width:min(390px,calc(100vw - 36px));background:#07111f"), false);
-  assert.equal(styleBody.includes(".lmb-status-strip"), true);
-  assert.equal(styleBody.includes(".lmb-create-checklist"), true);
+  assert.equal(styleBody.includes("background:var(--lmb-shell)"), true);
+  assert.equal(styleBody.includes(".lmb-status-strip"), false);
+  assert.equal(styleBody.includes(".lmb-status-card"), false);
+  assert.equal(styleBody.includes(".lmb-header-meta"), true);
+  assert.equal(styleBody.includes(".lmb-meta-chip"), true);
+  assert.equal(styleBody.includes(".lmb-create-stepper"), true);
   assert.equal(styleBody.includes(".lmb-panel-card"), true);
-  assert.equal(source.includes('id="lmb_status_strip"'), true);
-  assert.equal(source.includes("Phiên bản"), true);
-  assert.equal(source.includes("Worker"), true);
-  assert.equal(source.includes("File kết quả"), true);
-  assert.equal(source.includes("lmb-create-checklist"), true);
+  assert.equal(source.includes('id="lmb_status_strip"'), false);
+  assert.equal(source.includes("lmb-status-card"), false);
+  assert.equal(source.includes("lmb-header-meta"), true);
+  assert.equal(source.includes("lmb-meta-chip"), true);
+  assert.equal(source.includes("lmb-create-checklist"), false);
+  assert.equal(source.includes("lmb-create-stepper"), true);
   assert.equal(source.includes("Chọn ngành"), true);
-  assert.equal(source.includes("Nhập Excel/CSV"), true);
-  assert.equal(source.includes("Theo dõi dashboard"), true);
+  assert.equal(source.includes("Nhập file"), true);
+  assert.equal(source.includes("Theo dõi tiến độ"), true);
   assert.equal(styleBody.includes("lmb-control-avatar"), true);
   assert.equal(styleBody.includes("lmb-ai-kicker"), true);
   assert.equal(styleBody.includes("lmb-module"), true);
@@ -117,19 +123,19 @@ function assertNoMojibake(label, value) {
   assert.equal(bridge.shouldShowExtensionUpdate({ latest_version: "1.1.0" }, "1.1.0"), false);
   assert.equal(typeof bridge.isExtensionUpdateRequired, "function");
   assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.0" }, "1.1.0"), true);
-  assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.4" }, "1.2.4"), false);
+  assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.5" }, "1.2.5"), false);
   assert.equal(typeof bridge.isExtensionAutomationLocked, "function");
   assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.0" }, "1.1.0"), true);
-  assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.4" }, "1.2.4"), false);
+  assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.5" }, "1.2.5"), false);
   assert.equal(typeof bridge.buildRequiredUpdateTestInfo, "function");
   const forcedUpdateInfo = bridge.buildRequiredUpdateTestInfo({
-    latest_version: "1.2.4",
-    min_supported_version: "1.2.4",
+    latest_version: "1.2.5",
+    min_supported_version: "1.2.5",
     release_notes: ["Bản production"]
-  }, "1.2.4");
-  assert.equal(forcedUpdateInfo.latest_version, "1.2.5");
-  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.5");
-  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.4"), true);
+  }, "1.2.5");
+  assert.equal(forcedUpdateInfo.latest_version, "1.2.6");
+  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.6");
+  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.5"), true);
   assert.equal(forcedUpdateInfo.release_notes[0], "Chế độ kiểm thử bắt buộc cập nhật trên máy hiện tại.");
   assert.equal(source.includes("UPDATE_REQUIRED_TEST_KEY"), true);
   assert.equal(source.includes("applyRequiredUpdateTestMode"), true);
@@ -274,7 +280,7 @@ function assertNoMojibake(label, value) {
     command: "can them nut bao loi nhanh"
   });
   assert.equal(payload.source, "employee-extension");
-  assert.equal(payload.version, "1.2.4");
+  assert.equal(payload.version, "1.2.5");
   assert.equal(payload.type, "feature");
   assert.equal(payload.urgency, "high");
   assert.equal(payload.sender, "Admin NPP");
@@ -405,13 +411,13 @@ function assertNoMojibake(label, value) {
   assert.equal(typeof supportWorker.ticketStatusLabel, "function");
   assert.equal(typeof supportWorker.validateFeedbackPayload, "function");
   assert.equal(typeof supportWorker.formatTelegramMessage, "function");
-  assert.equal(supportWorker.WORKER_VERSION, "1.2.4");
+  assert.equal(supportWorker.WORKER_VERSION, "1.2.5");
   assert.equal(typeof supportWorker.extensionUpdateInfo, "function");
   const extensionInfo = supportWorker.extensionUpdateInfo();
-  assert.equal(extensionInfo.latest_version, "1.2.4");
-  assert.equal(extensionInfo.min_supported_version, "1.2.4");
-  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.4\/dms-assistant-extension-v1\.2\.4\.zip$/);
-  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.4$/);
+  assert.equal(extensionInfo.latest_version, "1.2.5");
+  assert.equal(extensionInfo.min_supported_version, "1.2.5");
+  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.5\/dms-assistant-extension-v1\.2\.5\.zip$/);
+  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.5$/);
   assert.equal(workerSource.includes("GITHUB_RELEASE_REPO"), true);
   assert.equal(Array.isArray(extensionInfo.release_notes), true);
   assert.match(workerSource, /\/extension-version/);
@@ -1173,7 +1179,7 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const optionsJson = await optionsRes.json();
     assert.equal(optionsJson.ok, true);
-    assert.equal(optionsJson.worker_version, "1.2.4");
+    assert.equal(optionsJson.worker_version, "1.2.5");
     assert.equal(optionsJson.capabilities.attachments, true);
     assert.equal(optionsJson.capabilities.telegram_actions, true);
     assert.equal(optionsJson.capabilities.ticket_sync, true);
@@ -1189,9 +1195,9 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const versionJson = await versionRes.json();
     assert.equal(versionJson.ok, true);
-    assert.equal(versionJson.latest_version, "1.2.4");
-    assert.equal(versionJson.min_supported_version, "1.2.4");
-    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.4\/dms-assistant-extension-v1\.2\.4\.zip/);
+    assert.equal(versionJson.latest_version, "1.2.5");
+    assert.equal(versionJson.min_supported_version, "1.2.5");
+    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.5\/dms-assistant-extension-v1\.2\.5\.zip/);
 
     const callsWithoutAttachment = [];
     global.fetch = async function(url, options) {
@@ -1246,7 +1252,7 @@ async function runAsyncTests() {
     assert.equal(jsonWithAttachment.ok, true);
     assert.equal(jsonWithAttachment.attachment_received, true);
     assert.equal(jsonWithAttachment.attachment_sent, true);
-    assert.equal(jsonWithAttachment.worker_version, "1.2.4");
+    assert.equal(jsonWithAttachment.worker_version, "1.2.5");
     assert.equal(callsWithAttachment.length, 2);
     assert.match(callsWithAttachment[0].url, /sendMessage/);
     assert.match(callsWithAttachment[1].url, /sendDocument/);
