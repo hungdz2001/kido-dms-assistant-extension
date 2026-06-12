@@ -18,7 +18,7 @@ function assertNoMojibake(label, value) {
 
 {
   assert.equal(bridge.EXTENSION_AUTHOR, "HƯNG ĐẸP TRAI");
-  assert.equal(manifest.version, "1.2.9");
+  assert.equal(manifest.version, "1.2.10");
   assert.equal(bridge.EXTENSION_VERSION, manifest.version);
   assert.match(bridge.buildUiFooterHtml(), /Phát triển bởi/);
   assert.match(bridge.buildUiFooterHtml(), /HƯNG ĐẸP TRAI/);
@@ -154,10 +154,10 @@ function assertNoMojibake(label, value) {
   assert.equal(bridge.shouldShowExtensionUpdate({ latest_version: "1.1.0" }, "1.1.0"), false);
   assert.equal(typeof bridge.isExtensionUpdateRequired, "function");
   assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.0" }, "1.1.0"), true);
-  assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.9" }, "1.2.9"), false);
+  assert.equal(bridge.isExtensionUpdateRequired({ min_supported_version: "1.2.10" }, "1.2.10"), false);
   assert.equal(typeof bridge.isExtensionAutomationLocked, "function");
   assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.0" }, "1.1.0"), true);
-  assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.9" }, "1.2.9"), false);
+  assert.equal(bridge.isExtensionAutomationLocked({ min_supported_version: "1.2.10" }, "1.2.10"), false);
   assert.equal(typeof bridge.normalizeControlPanelMode, "function");
   assert.equal(bridge.normalizeControlPanelMode("minimized"), "minimized");
   assert.equal(bridge.normalizeControlPanelMode("weird"), "open");
@@ -165,13 +165,13 @@ function assertNoMojibake(label, value) {
   assert.deepEqual(bridge.clampControlPanelPosition({ x: -20, y: 900 }, { width: 800, height: 600 }, { width: 52, height: 52 }), { x: 8, y: 540 });
   assert.equal(typeof bridge.buildRequiredUpdateTestInfo, "function");
   const forcedUpdateInfo = bridge.buildRequiredUpdateTestInfo({
-    latest_version: "1.2.9",
-    min_supported_version: "1.2.9",
+    latest_version: "1.2.10",
+    min_supported_version: "1.2.10",
     release_notes: ["Bản production"]
-  }, "1.2.9");
-  assert.equal(forcedUpdateInfo.latest_version, "1.2.10");
-  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.10");
-  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.9"), true);
+  }, "1.2.10");
+  assert.equal(forcedUpdateInfo.latest_version, "1.2.11");
+  assert.equal(forcedUpdateInfo.min_supported_version, "1.2.11");
+  assert.equal(bridge.isExtensionAutomationLocked(forcedUpdateInfo, "1.2.10"), true);
   assert.equal(forcedUpdateInfo.release_notes[0], "Chế độ kiểm thử bắt buộc cập nhật trên máy hiện tại.");
   assert.equal(source.includes("UPDATE_REQUIRED_TEST_KEY"), true);
   assert.equal(source.includes("applyRequiredUpdateTestMode"), true);
@@ -363,7 +363,7 @@ function assertNoMojibake(label, value) {
     command: "can them nut bao loi nhanh"
   });
   assert.equal(payload.source, "employee-extension");
-  assert.equal(payload.version, "1.2.9");
+  assert.equal(payload.version, "1.2.10");
   assert.equal(payload.type, "feature");
   assert.equal(payload.urgency, "high");
   assert.equal(payload.sender, "Admin NPP");
@@ -494,13 +494,13 @@ function assertNoMojibake(label, value) {
   assert.equal(typeof supportWorker.ticketStatusLabel, "function");
   assert.equal(typeof supportWorker.validateFeedbackPayload, "function");
   assert.equal(typeof supportWorker.formatTelegramMessage, "function");
-  assert.equal(supportWorker.WORKER_VERSION, "1.2.9");
+  assert.equal(supportWorker.WORKER_VERSION, "1.2.10");
   assert.equal(typeof supportWorker.extensionUpdateInfo, "function");
   const extensionInfo = supportWorker.extensionUpdateInfo();
-  assert.equal(extensionInfo.latest_version, "1.2.9");
-  assert.equal(extensionInfo.min_supported_version, "1.2.9");
-  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.9\/dms-assistant-extension-v1\.2\.9\.zip$/);
-  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.9$/);
+  assert.equal(extensionInfo.latest_version, "1.2.10");
+  assert.equal(extensionInfo.min_supported_version, "1.2.10");
+  assert.match(extensionInfo.download_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.10\/dms-assistant-extension-v1\.2\.10\.zip$/);
+  assert.match(extensionInfo.changelog_url, /^https:\/\/github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/tag\/v1\.2\.10$/);
   assert.equal(workerSource.includes("GITHUB_RELEASE_REPO"), true);
   assert.equal(Array.isArray(extensionInfo.release_notes), true);
   assert.match(workerSource, /\/extension-version/);
@@ -1326,7 +1326,7 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const optionsJson = await optionsRes.json();
     assert.equal(optionsJson.ok, true);
-    assert.equal(optionsJson.worker_version, "1.2.9");
+    assert.equal(optionsJson.worker_version, "1.2.10");
     assert.equal(optionsJson.capabilities.attachments, true);
     assert.equal(optionsJson.capabilities.telegram_actions, true);
     assert.equal(optionsJson.capabilities.ticket_sync, true);
@@ -1342,9 +1342,9 @@ async function runAsyncTests() {
     }), { SUPPORT_TICKETS: ticketKv });
     const versionJson = await versionRes.json();
     assert.equal(versionJson.ok, true);
-    assert.equal(versionJson.latest_version, "1.2.9");
-    assert.equal(versionJson.min_supported_version, "1.2.9");
-    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.9\/dms-assistant-extension-v1\.2\.9\.zip/);
+    assert.equal(versionJson.latest_version, "1.2.10");
+    assert.equal(versionJson.min_supported_version, "1.2.10");
+    assert.match(versionJson.download_url, /github\.com\/hungdz2001\/kido-dms-assistant-extension\/releases\/download\/v1\.2\.10\/dms-assistant-extension-v1\.2\.10\.zip/);
 
     const callsWithoutAttachment = [];
     global.fetch = async function(url, options) {
@@ -1399,7 +1399,7 @@ async function runAsyncTests() {
     assert.equal(jsonWithAttachment.ok, true);
     assert.equal(jsonWithAttachment.attachment_received, true);
     assert.equal(jsonWithAttachment.attachment_sent, true);
-    assert.equal(jsonWithAttachment.worker_version, "1.2.9");
+    assert.equal(jsonWithAttachment.worker_version, "1.2.10");
     assert.equal(callsWithAttachment.length, 2);
     assert.match(callsWithAttachment[0].url, /sendMessage/);
     assert.match(callsWithAttachment[1].url, /sendDocument/);

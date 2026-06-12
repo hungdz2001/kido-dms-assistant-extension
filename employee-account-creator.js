@@ -4,7 +4,7 @@
   var WORKER_ORIGIN = "";
   var SEND_PATH = "";
   var FEEDBACK_WORKER_URL = "https://kdc-employee-support.chillwithdms.workers.dev/feedback";
-  var EXTENSION_VERSION = "1.2.9";
+  var EXTENSION_VERSION = "1.2.10";
   var STORAGE_KEY = "lmb_last_sent_signature_v1";
   var EMPLOYEE_BATCH_KEY = "lmb_employee_batch_v1";
   var EMPLOYEE_QUEUE_HASH_KEY = "lmb_employee_queue";

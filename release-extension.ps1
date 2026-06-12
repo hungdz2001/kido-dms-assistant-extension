@@ -71,6 +71,10 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
   $TestPath = Join-Path $ProjectRoot "employee-account-creator.test.cjs"
   $TestText = Read-Utf8File $TestPath
   $TestText = $TestText.Replace($OldVersion, $Version)
+  $TestText = $TestText.Replace(
+    [System.Text.RegularExpressions.Regex]::Escape($OldVersion),
+    [System.Text.RegularExpressions.Regex]::Escape($Version)
+  )
   $TestText = Replace-Required $TestText 'assert\.equal\(manifest\.version, "[^"]+"\);' ('assert.equal(manifest.version, "' + $Version + '");') "test manifest version"
   $TestText = Replace-Required $TestText 'assert\.equal\(supportWorker\.WORKER_VERSION, "[^"]+"\);' ('assert.equal(supportWorker.WORKER_VERSION, "' + $Version + '");') "test worker version"
   $TestText = Replace-Required $TestText 'assert\.equal\(extensionInfo\.latest_version, "[^"]+"\);' ('assert.equal(extensionInfo.latest_version, "' + $Version + '");') "test extension info version"
