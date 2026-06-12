@@ -3377,6 +3377,42 @@
     };
   }
 
+  function isEmployeeTableEmptyText(text) {
+    var plain = stripAccents(text).toLowerCase().replace(/\s+/g, " ").trim();
+    return plain === "trong" ||
+      plain.indexOf("khong co du lieu") >= 0 ||
+      plain.indexOf("no data") >= 0;
+  }
+
+  function classifyEmployeeSearchSnapshot(snapshot) {
+    snapshot = snapshot || {};
+    if (snapshot.rowInfo) return "found";
+    if (snapshot.loading) return "pending";
+    return snapshot.empty ? "empty" : "pending";
+  }
+
+  function findEmployeeTableContainer() {
+    if (typeof document === "undefined") return null;
+    var selectors = [
+      ".ant-table-wrapper",
+      ".ant-table",
+      ".el-table",
+      "[role='table']"
+    ];
+    return Array.from(document.querySelectorAll(selectors.join(","))).find(function(node) {
+      return isVisible(node) && !isOwnExtensionElement(node) &&
+        node.querySelector("tbody,.ant-table-placeholder,.ant-empty,.el-table__empty-block,[role='row']");
+    }) || null;
+  }
+
+  function isEmployeeTableEmpty(container) {
+    if (!container) return false;
+    var emptyNode = container.querySelector(
+      ".ant-table-placeholder,.ant-empty,.el-table__empty-block"
+    );
+    return !!(emptyNode && isVisible(emptyNode) && isEmployeeTableEmptyText(visibleText(emptyNode)));
+  }
+
   function findEmployeeEditButton(row) {
     if (!row) return null;
     var nodes = Array.from(row.querySelectorAll("button,[role='button'],a,span,i,svg"));
@@ -5182,6 +5218,8 @@
     fieldTextMatches: fieldTextMatches,
     inputSearchTerms: inputSearchTerms,
     employeeRowStatusFromText: employeeRowStatusFromText,
+    isEmployeeTableEmptyText: isEmployeeTableEmptyText,
+    classifyEmployeeSearchSnapshot: classifyEmployeeSearchSnapshot,
     selectExtensionChromeApi: selectExtensionChromeApi,
     isEmployeeCreateCompleteAfterSubmit: isEmployeeCreateCompleteAfterSubmit,
     isEmployeeUpdateCompleteAfterSubmit: isEmployeeUpdateCompleteAfterSubmit,

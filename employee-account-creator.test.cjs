@@ -254,6 +254,32 @@ function assertNoMojibake(label, value) {
   assert.equal(bridge.employeeRowStatusFromText("KDBMK0299 Lê Thị Thùy Lợi Đang hoạt động GT"), "active");
   assert.equal(bridge.employeeRowStatusFromText("KDBMK0299 Lê Thị Thùy Lợi Ngừng hoạt động GT"), "inactive");
   assert.equal(bridge.employeeRowStatusFromText("KDBMK0299 Lê Thị Thùy Lợi GT"), "unknown");
+  assert.equal(typeof bridge.isEmployeeTableEmptyText, "function");
+  assert.equal(bridge.isEmployeeTableEmptyText("Trống"), true);
+  assert.equal(bridge.isEmployeeTableEmptyText("Không có dữ liệu"), true);
+  assert.equal(bridge.isEmployeeTableEmptyText("No data"), true);
+  assert.equal(bridge.isEmployeeTableEmptyText("Trạng thái Đang hoạt động"), false);
+  assert.equal(typeof bridge.classifyEmployeeSearchSnapshot, "function");
+  assert.equal(bridge.classifyEmployeeSearchSnapshot({
+    rowInfo: { status: "active" },
+    loading: false,
+    empty: false
+  }), "found");
+  assert.equal(bridge.classifyEmployeeSearchSnapshot({
+    rowInfo: null,
+    loading: true,
+    empty: true
+  }), "pending");
+  assert.equal(bridge.classifyEmployeeSearchSnapshot({
+    rowInfo: null,
+    loading: false,
+    empty: true
+  }), "empty");
+  assert.equal(bridge.classifyEmployeeSearchSnapshot({
+    rowInfo: null,
+    loading: false,
+    empty: false
+  }), "pending");
   assert.equal(bridge.normalizeControlPanelTab("commands"), "update");
   assert.equal(bridge.normalizeControlPanelTab("update"), "update");
 
