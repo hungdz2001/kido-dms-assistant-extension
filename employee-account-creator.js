@@ -4,7 +4,7 @@
   var WORKER_ORIGIN = "";
   var SEND_PATH = "";
   var FEEDBACK_WORKER_URL = "https://kdc-employee-support.chillwithdms.workers.dev/feedback";
-  var EXTENSION_VERSION = "1.2.7";
+  var EXTENSION_VERSION = "1.2.8";
   var STORAGE_KEY = "lmb_last_sent_signature_v1";
   var EMPLOYEE_BATCH_KEY = "lmb_employee_batch_v1";
   var EMPLOYEE_QUEUE_HASH_KEY = "lmb_employee_queue";
@@ -194,10 +194,19 @@
     return "https://admin2.kido.vn/userManager/list" + (params.length ? "?" + params.join("&") : "");
   }
 
+  function normalizeEmployeeUpdateSearchMode(mode) {
+    return mode === "all" ? "all" : "active";
+  }
+
+  function buildEmployeeUpdateSearchUrl(item, mode) {
+    var searchMode = normalizeEmployeeUpdateSearchMode(mode);
+    return buildEmployeeSearchUrl(item && item.employee_code, searchMode !== "all");
+  }
+
   function employeeAdminUrlForQueue(queue) {
     if (queue && queue.queue_type === EMPLOYEE_UPDATE_QUEUE_TYPE) {
       var employee = employeeAtQueueIndex(queue, queue.current_index || 0) || (queue.employees || [])[0] || {};
-      return buildEmployeeSearchUrl(employee.employee_code, true);
+      return buildEmployeeUpdateSearchUrl(employee, queue.search_mode || "active");
     }
     return employeeAdminUrlForCategory(queue && queue.category_choice);
   }
@@ -1162,7 +1171,7 @@
       ["target_category", "NGANH CAN THEM"],
       ["update_status", "TRANG THAI CAP NHAT"],
       ["updated_time", "THOI GIAN CAP NHAT"],
-      ["update_error", "GHI CHU LOI"]
+      ["update_error", "GHI CHÚ"]
     ], results || []);
   }
 
@@ -2357,7 +2366,8 @@
           queue_type: EMPLOYEE_UPDATE_QUEUE_TYPE,
           task_type: taskType,
           status: "pending",
-          admin_url: buildEmployeeSearchUrl(items[0] && items[0].employee_code, true),
+          search_mode: "active",
+          admin_url: buildEmployeeUpdateSearchUrl(items[0], "active"),
           current_index: 0,
           employees: items,
           results: [],
@@ -3347,6 +3357,22 @@
     }) || null;
   }
 
+  function employeeRowStatusFromText(text) {
+    var plain = stripAccents(text).toLowerCase();
+    if (plain.indexOf("ngung hoat dong") >= 0) return "inactive";
+    if (plain.indexOf("dang hoat dong") >= 0) return "active";
+    return "unknown";
+  }
+
+  function findEmployeeRowInfoByCode(employeeCode) {
+    var row = findEmployeeRowByCode(employeeCode);
+    if (!row) return null;
+    return {
+      row: row,
+      status: employeeRowStatusFromText(visibleText(row))
+    };
+  }
+
   function findEmployeeEditButton(row) {
     if (!row) return null;
     var nodes = Array.from(row.querySelectorAll("button,[role='button'],a,span,i,svg"));
@@ -3375,8 +3401,8 @@
     return actions[0] || null;
   }
 
-  async function clickEmployeeEditButton(employee) {
-    var row = await waitFor(function() {
+  async function clickEmployeeEditButton(employee, knownRow) {
+    var row = knownRow && isVisible(knownRow) ? knownRow : await waitFor(function() {
       return findEmployeeRowByCode(employee && employee.employee_code);
     }, 15000, 300);
     if (!row) throw new Error("Khong tim thay dong nhan vien " + cleanField(employee && employee.employee_code) + " tren trang tim kiem.");
@@ -4283,7 +4309,16 @@
     try {
       var closedBeforeCheck = await closeOpenEmployeeModal();
       if (!closedBeforeCheck) throw new Error("Khong dong duoc cua so nhan vien dang mo.");
-      modal = await clickEmployeeEditButton(normalized);
+      var rowInfo = await waitFor(function() {
+        return findEmployeeRowInfoByCode(normalized.employee_code);
+      }, 15000, 300);
+      if (!rowInfo) throw new Error("Không tìm thấy nhân viên ở trạng thái đang hoạt động hoặc ngừng hoạt động.");
+      if (normalizeEmployeeUpdateTaskType(normalized.update_task) === UPDATE_TASK_RESIGNATION && rowInfo.status === "inactive") {
+        result.update_status = "Thành công";
+        result.update_error = "Nhân viên đã ngừng hoạt động trước đó.";
+        return result;
+      }
+      modal = await clickEmployeeEditButton(normalized, rowInfo.row);
       await applyEmployeeUpdateForm(modal, normalized);
       await sleep(500);
       await waitForAdminRunControl();
@@ -4645,21 +4680,25 @@
     panel.appendChild(body);
   }
 
-  function isCurrentEmployeeSearchUrl(employeeCode) {
+  function isCurrentEmployeeUpdateSearchUrl(item, mode) {
     if (!root.location) return false;
     try {
       var url = new URL(root.location.href);
-      var wanted = cleanField(employeeCode).toUpperCase();
+      var wanted = cleanField(item && item.employee_code).toUpperCase();
       var keyword = cleanField(url.searchParams.get("keyword") || "").toUpperCase();
       var status = cleanField(url.searchParams.get("status") || "").toUpperCase();
-      return /\/userManager\/list$/i.test(url.pathname) && keyword === wanted && status === "ACTIVE";
+      var searchMode = normalizeEmployeeUpdateSearchMode(mode);
+      return /\/userManager\/list$/i.test(url.pathname) &&
+        keyword === wanted &&
+        (searchMode === "all" ? !status : status === "ACTIVE");
     } catch (e) {
       return false;
     }
   }
 
-  async function navigateToEmployeeUpdateItem(queue, item) {
-    queue.admin_url = buildEmployeeSearchUrl(item && item.employee_code, true);
+  async function navigateToEmployeeUpdateItem(queue, item, mode) {
+    queue.search_mode = normalizeEmployeeUpdateSearchMode(mode);
+    queue.admin_url = buildEmployeeUpdateSearchUrl(item, queue.search_mode);
     var targetUrl = queue.admin_url;
     try {
       await chromeStorageSet((function() {
@@ -4709,9 +4748,26 @@
       var item = employeeAtQueueIndex(queue, i);
       if (!item) break;
       queue.current_index = i;
-      if (!isCurrentEmployeeSearchUrl(item.employee_code)) {
-        await navigateToEmployeeUpdateItem(queue, item);
+      var searchMode = normalizeEmployeeUpdateSearchMode(queue.search_mode || "active");
+      if (!isCurrentEmployeeUpdateSearchUrl(item, searchMode)) {
+        await navigateToEmployeeUpdateItem(queue, item, searchMode);
         return;
+      }
+
+      var rowInfo = await waitFor(function() {
+        return findEmployeeRowInfoByCode(item.employee_code);
+      }, 5000, 300);
+      if (!rowInfo && searchMode === "active" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
+        queue.search_mode = "all";
+        queue.admin_url = buildEmployeeUpdateSearchUrl(item, "all");
+        await navigateToEmployeeUpdateItem(queue, item, "all");
+        return;
+      }
+      var notFoundResult = null;
+      if (!rowInfo && searchMode === "all" && normalizeEmployeeUpdateTaskType(item.update_task) === UPDATE_TASK_RESIGNATION) {
+        notFoundResult = createEmployeeUpdateResultDefaults(normalizeEmployeeUpdateTask(item, item.update_task));
+        notFoundResult.update_status = "Lỗi";
+        notFoundResult.update_error = "Không tìm thấy nhân viên ở trạng thái đang hoạt động hoặc ngừng hoạt động.";
       }
 
       adminPanel(
@@ -4722,7 +4778,7 @@
       );
       var result = null;
       try {
-        result = await updateOneEmployee(Object.assign({}, item));
+        result = notFoundResult || await updateOneEmployee(Object.assign({}, item));
       } catch (err) {
         if (isAdminControlError(err)) {
           stopped = true;
@@ -4732,6 +4788,7 @@
       }
       results.push(result);
       queue.current_index = i + 1;
+      queue.search_mode = "active";
       queue.results = results;
       if (adminStopRequested || shouldStopEmployeeQueue(queue)) {
         stopped = true;
@@ -4950,6 +5007,7 @@
     employeeAdminUrlForCategory: employeeAdminUrlForCategory,
     applyEmployeeCategoryChoice: applyEmployeeCategoryChoice,
     buildEmployeeSearchUrl: buildEmployeeSearchUrl,
+    buildEmployeeUpdateSearchUrl: buildEmployeeUpdateSearchUrl,
     buildAdminEmployeeQueueUrl: buildAdminEmployeeQueueUrl,
     buildSupportFeedbackPayload: buildSupportFeedbackPayload,
     formatSupportLogLine: formatSupportLogLine,
@@ -4995,6 +5053,7 @@
     selectedValueMatches: selectedValueMatches,
     fieldTextMatches: fieldTextMatches,
     inputSearchTerms: inputSearchTerms,
+    employeeRowStatusFromText: employeeRowStatusFromText,
     selectExtensionChromeApi: selectExtensionChromeApi,
     isEmployeeCreateCompleteAfterSubmit: isEmployeeCreateCompleteAfterSubmit,
     isEmployeeUpdateCompleteAfterSubmit: isEmployeeUpdateCompleteAfterSubmit,
